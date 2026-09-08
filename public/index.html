@@ -13,14 +13,14 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #172033;
+      background: #f4f7fb;
+      color: #222;
     }
 
     .container {
       max-width: 520px;
-      margin: 0 auto;
-      padding: 30px 18px;
+      margin: 40px auto;
+      padding: 20px;
     }
 
     .header {
@@ -30,17 +30,17 @@
 
     .header h1 {
       margin: 0;
-      font-size: 34px;
+      font-size: 36px;
     }
 
     .header p {
-      color: #667085;
+      color: #666;
     }
 
     .card {
       background: white;
-      padding: 24px;
-      border-radius: 16px;
+      padding: 25px;
+      border-radius: 15px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.08);
     }
 
@@ -54,51 +54,54 @@
     input {
       width: 100%;
       padding: 13px;
-      border: 1px solid #ccd3df;
-      border-radius: 9px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       font-size: 16px;
     }
 
     button {
       width: 100%;
-      margin-top: 18px;
       padding: 14px;
-      border: 0;
-      border-radius: 9px;
-      background: #172033;
-      color: white;
+      margin-top: 18px;
+      border: none;
+      border-radius: 8px;
       font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
+      background: #111;
+      color: white;
     }
 
     button:disabled {
       opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .result {
-      margin-top: 18px;
+      margin-top: 15px;
       padding: 15px;
-      border-radius: 10px;
-      background: #f4f6f8;
+      background: #f1f3f6;
+      border-radius: 8px;
       white-space: pre-line;
-    }
-
-    .code {
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 12px;
-      letter-spacing: 4px;
+      word-break: break-word;
     }
 
     .hidden {
       display: none;
     }
 
-    .footer {
+    .price-box {
+      margin-top: 15px;
+      padding: 15px;
+      background: #eef7ee;
+      border-radius: 8px;
+      white-space: pre-line;
+    }
+
+    footer {
       text-align: center;
       margin-top: 25px;
-      color: #667085;
+      color: #777;
       font-size: 13px;
     }
   </style>
@@ -106,229 +109,306 @@
 
 <body>
 
-<div class="container">
+  <div class="container">
 
-  <div class="header">
-    <h1>MtVerify</h1>
-    <p>Verification number service</p>
-  </div>
-
-  <div class="card">
-
-    <label for="country">Country</label>
-    <input
-      id="country"
-      type="text"
-      placeholder="Example: england"
-    >
-
-    <label for="operator">Operator</label>
-    <input
-      id="operator"
-      type="text"
-      value="any"
-      placeholder="Example: any"
-    >
-
-    <label for="service">Service</label>
-    <input
-      id="service"
-      type="text"
-      placeholder="Example: telegram"
-    >
-
-    <button id="rentButton">
-      Rent Number
-    </button>
-
-    <div id="result" class="result">
-      Enter your details and tap "Rent Number".
+    <div class="header">
+      <h1>MtVerify</h1>
+      <p>Virtual number verification service</p>
     </div>
 
-    <div id="orderSection" class="hidden">
+    <div class="card">
 
-      <button id="checkButton">
-        Check SMS
+      <label for="country">Country</label>
+      <input
+        id="country"
+        type="text"
+        placeholder="Example: england"
+      >
+
+      <label for="operator">Operator</label>
+      <input
+        id="operator"
+        type="text"
+        value="any"
+        placeholder="Example: any"
+      >
+
+      <label for="service">Service</label>
+      <input
+        id="service"
+        type="text"
+        placeholder="Example: telegram"
+      >
+
+      <button id="priceButton">
+        Check Price
       </button>
 
-      <div id="smsResult" class="result">
-        Waiting for SMS...
+      <div id="priceResult" class="price-box">
+        Enter a country and service, then tap "Check Price".
+      </div>
+
+      <button id="rentButton">
+        Rent Number
+      </button>
+
+      <div id="result" class="result">
+        Ready.
+      </div>
+
+      <div id="orderSection" class="hidden">
+
+        <button id="checkButton">
+          Check SMS
+        </button>
+
+        <div id="smsResult" class="result">
+          Waiting for SMS...
+        </div>
+
       </div>
 
     </div>
 
+    <footer>
+      MtVerify © 2026 — For lawful verification and testing purposes.
+    </footer>
+
   </div>
 
-  <div class="footer">
-    MtVerify — Use only for lawful verification and testing.
-  </div>
+  <script>
 
-</div>
+    let orderId = null;
 
-<script>
+    const countryInput = document.getElementById("country");
+    const operatorInput = document.getElementById("operator");
+    const serviceInput = document.getElementById("service");
 
-let orderId = null;
+    const priceButton = document.getElementById("priceButton");
+    const rentButton = document.getElementById("rentButton");
+    const checkButton = document.getElementById("checkButton");
 
-const rentButton = document.getElementById("rentButton");
-const checkButton = document.getElementById("checkButton");
-const result = document.getElementById("result");
-const smsResult = document.getElementById("smsResult");
-const orderSection = document.getElementById("orderSection");
+    const priceResult = document.getElementById("priceResult");
+    const result = document.getElementById("result");
+    const smsResult = document.getElementById("smsResult");
+    const orderSection = document.getElementById("orderSection");
 
-rentButton.addEventListener("click", async () => {
 
-  const country =
-    document.getElementById("country").value.trim();
+    // CHECK PRICE
+    priceButton.addEventListener("click", async () => {
 
-  const operator =
-    document.getElementById("operator").value.trim() || "any";
+      const country = countryInput.value.trim().toLowerCase();
+      const product = serviceInput.value.trim().toLowerCase();
 
-  const product =
-    document.getElementById("service").value.trim();
+      if (!country || !product) {
+        priceResult.textContent =
+          "Please enter the country and service first.";
+        return;
+      }
 
-  if (!country || !product) {
-    result.textContent =
-      "Please enter a country and service.";
-    return;
-  }
+      priceButton.disabled = true;
+      priceResult.textContent = "Checking current price...";
 
-  rentButton.disabled = true;
-  rentButton.textContent = "Requesting number...";
+      try {
 
-  result.textContent =
-    "Contacting 5SIM...";
+        const response = await fetch(
+          `/api/price?country=${encodeURIComponent(country)}&product=${encodeURIComponent(product)}`
+        );
 
-  try {
+        const data = await response.json();
 
-    const response = await fetch("/api/buy", {
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+            data.message ||
+            "Unable to check price."
+          );
+        }
 
-      method: "POST",
+        const countryData = data[country];
+        const productData =
+          countryData && countryData[product];
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+        if (!productData) {
+          priceResult.textContent =
+            "No price or availability was found for this country and service.";
+          return;
+        }
 
-      body: JSON.stringify({
-        country,
-        operator,
-        product
-      })
+        const operators = Object.entries(productData);
+
+        if (operators.length === 0) {
+          priceResult.textContent =
+            "No operators are currently available.";
+          return;
+        }
+
+        const lines = operators.map(([operator, info]) => {
+
+          let line =
+            `${operator}\n` +
+            `Price: ${info.cost}\n` +
+            `Available: ${info.count}`;
+
+          if (info.rate !== undefined) {
+            line += `\nSMS rate: ${info.rate}%`;
+          }
+
+          return line;
+        });
+
+        priceResult.textContent =
+          "Current prices:\n\n" +
+          lines.join("\n\n");
+
+      } catch (error) {
+
+        priceResult.textContent =
+          "Error: " + error.message;
+
+      } finally {
+
+        priceButton.disabled = false;
+      }
 
     });
 
-    const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        data.error || data.message || "Unable to rent number."
-      );
-    }
+    // RENT NUMBER
+    rentButton.addEventListener("click", async () => {
 
-    orderId = data.id;
+      const country = countryInput.value.trim().toLowerCase();
+      const operator =
+        operatorInput.value.trim().toLowerCase() || "any";
+      const product = serviceInput.value.trim().toLowerCase();
 
-    result.textContent =
-      "Number: " + (data.phone || "Unavailable") +
-      "\nOrder ID: " + (data.id || "Unavailable") +
-      "\nStatus: " + (data.status || "PENDING");
-
-    orderSection.classList.remove("hidden");
-
-  } catch (error) {
-
-    result.textContent =
-      "Error: " + error.message;
-
-  } finally {
-
-    rentButton.disabled = false;
-    rentButton.textContent = "Rent Number";
-
-  }
-
-});
-
-
-checkButton.addEventListener("click", async () => {
-
-  if (!orderId) {
-    smsResult.textContent =
-      "No active order.";
-    return;
-  }
-
-  checkButton.disabled = true;
-  checkButton.textContent = "Checking...";
-
-  try {
-
-    const response =
-      await fetch("/api/order/" + orderId);
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || data.message || "Unable to check order."
-      );
-    }
-
-    let message =
-      "Status: " + (data.status || "Unknown");
-
-    if (data.sms && data.sms.length > 0) {
-
-      const latest =
-        data.sms[data.sms.length - 1];
-
-      message +=
-        "\n\nSMS received:\n" +
-        (latest.text || "");
-
-      if (latest.code) {
-
-        message +=
-          "\n\nVerification code:";
-
-        smsResult.innerHTML =
-          message +
-          '<div class="code">' +
-          latest.code +
-          '</div>';
-
-      } else {
-
-        smsResult.textContent =
-          message;
-
+      if (!country || !product) {
+        result.textContent =
+          "Please enter the country and service first.";
+        return;
       }
 
-    } else {
+      rentButton.disabled = true;
+      result.textContent = "Requesting a number...";
 
-      message +=
-        "\n\nNo SMS received yet.";
+      orderSection.classList.add("hidden");
 
+      try {
+
+        const response = await fetch("/api/buy", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            country,
+            operator,
+            product
+          })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+            data.message ||
+            "Unable to rent number."
+          );
+        }
+
+        orderId = data.id;
+
+        result.textContent =
+          `Number: ${data.phone || "Not provided"}\n` +
+          `Order ID: ${data.id}\n` +
+          `Status: ${data.status || "active"}`;
+
+        orderSection.classList.remove("hidden");
+
+        smsResult.textContent =
+          "Waiting for SMS verification code...";
+
+      } catch (error) {
+
+        result.textContent =
+          "Error: " + error.message;
+
+      } finally {
+
+        rentButton.disabled = false;
+      }
+
+    });
+
+
+    // CHECK SMS
+    checkButton.addEventListener("click", async () => {
+
+      if (!orderId) {
+        smsResult.textContent =
+          "No active order found.";
+        return;
+      }
+
+      checkButton.disabled = true;
       smsResult.textContent =
-        message;
+        "Checking for SMS...";
 
-    }
+      try {
 
-  } catch (error) {
+        const response = await fetch(
+          `/api/order/${encodeURIComponent(orderId)}`
+        );
 
-    smsResult.textContent =
-      "Error: " + error.message;
+        const data = await response.json();
 
-  } finally {
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+            data.message ||
+            "Unable to check SMS."
+          );
+        }
 
-    checkButton.disabled = false;
-    checkButton.textContent =
-      "Check SMS";
+        if (data.sms && data.sms.length > 0) {
 
-  }
+          const messages = data.sms.map(message => {
 
-});
+            return (
+              `Sender: ${message.sender || "Unknown"}\n` +
+              `Message: ${message.text || ""}`
+            );
 
-</script>
+          });
+
+          smsResult.textContent =
+            messages.join("\n\n");
+
+        } else {
+
+          smsResult.textContent =
+            "No SMS received yet. Try again in a few seconds.";
+
+        }
+
+      } catch (error) {
+
+        smsResult.textContent =
+          "Error: " + error.message;
+
+      } finally {
+
+        checkButton.disabled = false;
+      }
+
+    });
+
+  </script>
 
 </body>
 </html>
