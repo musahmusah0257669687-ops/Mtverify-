@@ -12,7 +12,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Check that the server and private API-key configuration are available.
 app.get("/api/status", (req, res) => {
   res.json({
     site: "MtVerify",
@@ -21,7 +20,6 @@ app.get("/api/status", (req, res) => {
   });
 });
 
-// Rent a 5SIM activation number.
 app.post("/api/buy", async (req, res) => {
   try {
     const { country, operator = "any", product } = req.body;
@@ -44,34 +42,52 @@ app.post("/api/buy", async (req, res) => {
       `${encodeURIComponent(operator)}/` +
       `${encodeURIComponent(product)}`;
 
+    console.log("5SIM request:", url);
+
     const response = await fetch(url, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${process.env.FIVESIM_API_KEY}`,
         Accept: "application/json"
       }
     });
 
-    const data = await response.json();
+    const text = await response.text();
+
+    console.log("5SIM status:", response.status);
+    console.log("5SIM response:", text);
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
 
     if (!response.ok) {
-      return res.status(response.status).json(data);
+      return res.status(response.status).json({
+        error: data.message || data.error || text || "5SIM request failed."
+      });
     }
 
     res.json(data);
+
   } catch (error) {
-    console.error(error);
+    console.error("5SIM connection error:", error);
+
     res.status(500).json({
-      error: "Unable to contact 5SIM."
+      error: error.message || "Unable to contact 5SIM."
     });
   }
 });
 
-// Check an existing order.
 app.get("/api/order/:id", async (req, res) => {
   try {
     const response = await fetch(
       `https://5sim.com/v1/user/check/${encodeURIComponent(req.params.id)}`,
       {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${process.env.FIVESIM_API_KEY}`,
           Accept: "application/json"
@@ -79,12 +95,23 @@ app.get("/api/order/:id", async (req, res) => {
       }
     );
 
-    const data = await response.json();
+    const text = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
+
     res.status(response.status).json(data);
+
   } catch (error) {
-    console.error(error);
+    console.error("Order check error:", error);
+
     res.status(500).json({
-      error: "Unable to check the order."
+      error: error.message || "Unable to check order."
     });
   }
 });
