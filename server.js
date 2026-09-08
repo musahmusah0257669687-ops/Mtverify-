@@ -520,6 +520,253 @@ app.get("/api/balance", async (req, res) => {
 // --------------------------------------------------
 
 app.post("/api/buy", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const {
+      country,
+      operator = "any",
+      product,
+      email
+    } = req.body;
+
+    if (!country || !product || !email) {
+      return res.status(400).json({
+        error: "Country, service and email are required."
+      });
+    }
+
+    if (!process.env.FIVESIM_API_KEY) {
+      return res.status(500).json({
+        error: "5SIM API key is not configured."
+      });
+    }
+
+    const rate = Number(process.env.FIVESIM_GHS_RATE);
+    const markupPercent =
+      Number(process.env.MTVERIFY_MARKUP_PERCENT || 30);
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+      return res.status(500).json({
+        error: "MtVerify pricing rate is not configured."
+      });
+    }
+
+    if (
+      !Number.isFinite(markupPercent) ||
+      markupPercent < 0 ||
+      markupPercent > 500
+    ) {
+      return res.status(500).json({
+        error: "MtVerify markup is not configured correctly."
+      });
+    }
+
+    const customerEmail =
+      String(email).trim().toLowerCase();
+
+    // Get the current 5SIM price.
+    const priceUrl =
+      `https://5sim.com/v1/guest/prices?country=` +
+      `${encodeURIComponent(country)}` +
+      `&product=${encodeURIComponent(product)}`;
+
+    const priceResponse = await fetch(priceUrl, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    const priceData = await priceResponse.json();
+
+    if (!priceResponse.ok) {
+      return res.status(priceResponse.status).json({
+        error: "Unable to get the current 5SIM price."
+      });
+    }
+
+    const productData =
+      priceData[country] &&
+      priceData[country][product];
+
+    const selectedOperator =
+      productData &&
+      productData[operator];
+
+    if (!selectedOperator) {
+      return res.status(400).json({
+        error:
+          "The selected operator is no longer available. Please check the price again."
+      });
+    }
+
+    const fiveSimCost =
+      Number(selectedOperator.cost);
+
+    const available =
+      Number(selectedOperator.count);
+
+    if (
+      !Number.isFinite(fiveSimCost) ||
+      fiveSimCost <= 0
+    ) {
+      return res.status(400).json({
+        error: "Unable to determine the current 5SIM cost."
+      });
+    }
+
+    if (!Number.isFinite(available) || available <= 0) {
+      return res.status(400).json({
+        error: "This operator currently has no numbers available."
+      });
+    }
+
+    // Convert the configured 5SIM cost into GH₵.
+    const baseGhsCost =
+      fiveSimCost * rate;
+
+    // Add MtVerify markup.
+    const customerPrice =
+      Math.ceil(
+        baseGhsCost *
+        (1 + markupPercent / 100) *
+        100
+      ) / 100;
+
+    await client.query("BEGIN");
+
+    // Lock the customer row while checking/deducting balance.
+    const customerResult = await client.query(
+      `
+      SELECT email, balance
+      FROM customers
+      WHERE email = $1
+      FOR UPDATE
+      `,
+      [customerEmail]
+    );
+
+    if (customerResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "Customer account was not found."
+      });
+    }
+
+    const balance =
+      Number(customerResult.rows[0].balance);
+
+    if (balance < customerPrice) {
+      await client.query("ROLLBACK");
+
+      return res.status(402).json({
+        error:
+          `Insufficient balance. ` +
+          `Your balance is GH₵${balance.toFixed(2)} ` +
+          `and this number costs GH₵${customerPrice.toFixed(2)}.`,
+        balance,
+        customerPrice
+      });
+    }
+
+    /*
+      Reserve the customer's money before contacting 5SIM.
+      If 5SIM fails, the money is refunded below.
+    */
+    const newBalance =
+      Math.round(
+        (balance - customerPrice) * 100
+      ) / 100;
+
+    await client.query(
+      `
+      UPDATE customers
+      SET
+        balance = $1,
+        updated_at = NOW()
+      WHERE email = $2
+      `,
+      [newBalance, customerEmail]
+    );
+
+    await client.query("COMMIT");
+
+    // Now purchase the number from 5SIM.
+    const buyUrl =
+      `https://5sim.com/v1/user/buy/activation/` +
+      `${encodeURIComponent(country)}/` +
+      `${encodeURIComponent(operator)}/` +
+      `${encodeURIComponent(product)}`;
+
+    const response = await fetch(buyUrl, {
+      headers: {
+        Authorization:
+          `Bearer ${process.env.FIVESIM_API_KEY}`,
+        Accept: "application/json"
+      }
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = {
+        message: text
+      };
+    }
+
+    // If 5SIM failed, refund the customer's GH₵ balance.
+    if (!response.ok) {
+      await pool.query(
+        `
+        UPDATE customers
+        SET
+          balance = balance + $1,
+          updated_at = NOW()
+        WHERE email = $2
+        `,
+        [customerPrice, customerEmail]
+      );
+
+      return res.status(response.status).json({
+        error:
+          data.message ||
+          data.error ||
+          "5SIM could not provide the number. Your balance was refunded."
+      });
+    }
+
+    res.json({
+      ...data,
+      customerEmail,
+      fiveSimCost,
+      conversionRate: rate,
+      markupPercent,
+      customerPrice,
+      remainingBalance: newBalance
+    });
+
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
+
+    console.error("5SIM buy error:", error);
+
+    res.status(500).json({
+      error:
+        error.message ||
+        "Unable to complete number rental."
+    });
+
+  } finally {
+    client.release();
+  }
+});
   try {
     const {
       country,
