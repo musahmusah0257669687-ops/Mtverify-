@@ -1,41 +1,101 @@
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
+const { Pool } = require("pg");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// TEST ONLY:
-// Balances are stored in memory.
-// We will replace this with a database before going live.
-const balances = new Map();
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is not configured.");
+  process.exit(1);
+}
+
+if (!process.env.FIVESIM_API_KEY) {
+  console.warn("FIVESIM_API_KEY is not configured.");
+}
+
+if (!process.env.PAYSTACK_SECRET_KEY) {
+  console.warn("PAYSTACK_SECRET_KEY is not configured.");
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+// --------------------------------------------------
+// DATABASE SETUP
+// --------------------------------------------------
+
+async function setupDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      balance NUMERIC(12,2) NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id SERIAL PRIMARY KEY,
+      reference TEXT UNIQUE NOT NULL,
+      email TEXT NOT NULL,
+      amount NUMERIC(12,2) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      verified_at TIMESTAMPTZ
+    )
+  `);
+
+  console.log("Database tables are ready.");
+}
+
+// --------------------------------------------------
+// HOME
+// --------------------------------------------------
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// --------------------------------------------------
+// STATUS
+// --------------------------------------------------
 
-// ===============================
-// MTVERIFY STATUS
-// ===============================
+app.get("/api/status", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
 
-app.get("/api/status", (req, res) => {
-  res.json({
-    site: "MtVerify",
-    status: "online",
-    fiveSimConfigured: Boolean(process.env.FIVESIM_API_KEY),
-    paystackConfigured: Boolean(process.env.PAYSTACK_SECRET_KEY)
-  });
+    res.json({
+      site: "MtVerify",
+      status: "online",
+      databaseConfigured: Boolean(process.env.DATABASE_URL),
+      fiveSimConfigured: Boolean(process.env.FIVESIM_API_KEY),
+      paystackConfigured: Boolean(process.env.PAYSTACK_SECRET_KEY)
+    });
+  } catch (error) {
+    console.error("Status error:", error);
+
+    res.status(500).json({
+      site: "MtVerify",
+      status: "database_error"
+    });
+  }
 });
 
-
-// ===============================
+// --------------------------------------------------
 // CHECK 5SIM PRICE
-// ===============================
+// --------------------------------------------------
 
 app.get("/api/price", async (req, res) => {
   try {
@@ -76,14 +136,33 @@ app.get("/api/price", async (req, res) => {
   }
 });
 
+// --------------------------------------------------
+// CREATE / GET CUSTOMER
+// --------------------------------------------------
 
-// ===============================
-// PAYSTACK INITIALIZE PAYMENT
-// ===============================
+async function getOrCreateCustomer(email) {
+  const cleanEmail = String(email).trim().toLowerCase();
+
+  const result = await pool.query(
+    `
+    INSERT INTO customers (email)
+    VALUES ($1)
+    ON CONFLICT (email)
+    DO UPDATE SET updated_at = NOW()
+    RETURNING id, email, balance
+    `,
+    [cleanEmail]
+  );
+
+  return result.rows[0];
+}
+
+// --------------------------------------------------
+// PAYSTACK INITIALIZE
+// --------------------------------------------------
 
 app.post("/api/paystack/initialize", async (req, res) => {
   try {
-
     if (!process.env.PAYSTACK_SECRET_KEY) {
       return res.status(500).json({
         error: "Paystack secret key is not configured."
@@ -98,6 +177,7 @@ app.post("/api/paystack/initialize", async (req, res) => {
       });
     }
 
+    const cleanEmail = String(email).trim().toLowerCase();
     const numericAmount = Number(amount);
 
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -106,34 +186,49 @@ app.post("/api/paystack/initialize", async (req, res) => {
       });
     }
 
-    // Paystack expects the amount in the smallest currency unit.
-    // For Ghana cedis: GH₵10.00 = 1000 pesewas.
-    const amountInPesewas = Math.round(numericAmount * 100);
+    if (numericAmount < 1) {
+      return res.status(400).json({
+        error: "Minimum deposit is GH₵1."
+      });
+    }
+
+    await getOrCreateCustomer(cleanEmail);
+
+    const amountInPesewas =
+      Math.round(numericAmount * 100);
 
     const reference =
       `MTV-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+
+    // Save the expected payment before sending
+    // the customer to Paystack.
+    await pool.query(
+      `
+      INSERT INTO payments
+      (reference, email, amount, status)
+      VALUES ($1, $2, $3, 'pending')
+      `,
+      [reference, cleanEmail, numericAmount]
+    );
 
     const response = await fetch(
       "https://api.paystack.co/transaction/initialize",
       {
         method: "POST",
-
         headers: {
           Authorization:
             `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
           "Content-Type": "application/json",
           Accept: "application/json"
         },
-
         body: JSON.stringify({
-          email,
+          email: cleanEmail,
           amount: String(amountInPesewas),
           currency: "GHS",
           reference,
-
           metadata: {
             service: "MtVerify",
-            customer_email: email
+            customer_email: cleanEmail
           }
         })
       }
@@ -142,6 +237,15 @@ app.post("/api/paystack/initialize", async (req, res) => {
     const data = await response.json();
 
     if (!response.ok || !data.status) {
+      await pool.query(
+        `
+        UPDATE payments
+        SET status = 'initialize_failed'
+        WHERE reference = $1
+        `,
+        [reference]
+      );
+
       return res.status(response.status || 400).json({
         error:
           data.message ||
@@ -156,7 +260,6 @@ app.post("/api/paystack/initialize", async (req, res) => {
     });
 
   } catch (error) {
-
     console.error("Paystack initialize error:", error);
 
     res.status(500).json({
@@ -167,14 +270,14 @@ app.post("/api/paystack/initialize", async (req, res) => {
   }
 });
 
-
-// ===============================
+// --------------------------------------------------
 // VERIFY PAYSTACK PAYMENT
-// ===============================
+// --------------------------------------------------
 
 app.get("/api/paystack/verify/:reference", async (req, res) => {
-  try {
+  const client = await pool.connect();
 
+  try {
     if (!process.env.PAYSTACK_SECRET_KEY) {
       return res.status(500).json({
         error: "Paystack secret key is not configured."
@@ -183,6 +286,48 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
 
     const reference = req.params.reference;
 
+    // Get our saved payment.
+    const paymentResult = await client.query(
+      `
+      SELECT *
+      FROM payments
+      WHERE reference = $1
+      `,
+      [reference]
+    );
+
+    if (paymentResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Payment reference was not found."
+      });
+    }
+
+    const payment = paymentResult.rows[0];
+
+    // If already credited, NEVER credit again.
+    if (payment.status === "success") {
+      const customerResult = await client.query(
+        `
+        SELECT email, balance
+        FROM customers
+        WHERE email = $1
+        `,
+        [payment.email]
+      );
+
+      const customer = customerResult.rows[0];
+
+      return res.json({
+        success: true,
+        alreadyProcessed: true,
+        email: customer.email,
+        paidAmount: Number(payment.amount),
+        balance: Number(customer.balance),
+        reference
+      });
+    }
+
+    // Ask Paystack for the real transaction status.
     const response = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
@@ -213,39 +358,115 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
       });
     }
 
-    // Get customer email from transaction.
-    const email =
+    const paystackEmail =
       transaction.customer &&
-      transaction.customer.email;
+      transaction.customer.email
+        ? transaction.customer.email.trim().toLowerCase()
+        : "";
 
-    if (!email) {
-      return res.status(400).json({
-        error: "Customer email was not found."
-      });
-    }
-
-    // Paystack amount is in pesewas.
     const paidAmount =
       Number(transaction.amount) / 100;
 
-    // Credit balance.
-    const currentBalance =
-      balances.get(email) || 0;
+    // Make sure the payment belongs to the customer
+    // and amount we originally requested.
+    if (paystackEmail !== payment.email) {
+      return res.status(400).json({
+        error: "Payment email does not match the payment record."
+      });
+    }
 
-    const newBalance =
-      currentBalance + paidAmount;
+    if (
+      !Number.isFinite(paidAmount) ||
+      Math.abs(paidAmount - Number(payment.amount)) > 0.001
+    ) {
+      return res.status(400).json({
+        error: "Payment amount does not match the expected amount."
+      });
+    }
 
-    balances.set(email, newBalance);
+    await client.query("BEGIN");
+
+    // Lock the payment row so two simultaneous requests
+    // cannot credit it twice.
+    const lockedPaymentResult = await client.query(
+      `
+      SELECT *
+      FROM payments
+      WHERE reference = $1
+      FOR UPDATE
+      `,
+      [reference]
+    );
+
+    const lockedPayment = lockedPaymentResult.rows[0];
+
+    if (lockedPayment.status === "success") {
+      await client.query("ROLLBACK");
+
+      const customerResult = await pool.query(
+        `
+        SELECT email, balance
+        FROM customers
+        WHERE email = $1
+        `,
+        [payment.email]
+      );
+
+      const customer = customerResult.rows[0];
+
+      return res.json({
+        success: true,
+        alreadyProcessed: true,
+        email: customer.email,
+        paidAmount: Number(payment.amount),
+        balance: Number(customer.balance),
+        reference
+      });
+    }
+
+    // Lock customer row and add the money atomically.
+    const customerResult = await client.query(
+      `
+      INSERT INTO customers (email, balance)
+      VALUES ($1, $2)
+      ON CONFLICT (email)
+      DO UPDATE SET
+        balance = customers.balance + EXCLUDED.balance,
+        updated_at = NOW()
+      RETURNING email, balance
+      `,
+      [payment.email, paidAmount]
+    );
+
+    const customer = customerResult.rows[0];
+
+    // Mark payment as successfully credited.
+    await client.query(
+      `
+      UPDATE payments
+      SET
+        status = 'success',
+        verified_at = NOW()
+      WHERE reference = $1
+      `,
+      [reference]
+    );
+
+    await client.query("COMMIT");
 
     res.json({
       success: true,
-      email,
+      alreadyProcessed: false,
+      email: customer.email,
       paidAmount,
-      balance: newBalance,
-      reference: transaction.reference
+      balance: Number(customer.balance),
+      reference
     });
 
   } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
 
     console.error("Paystack verification error:", error);
 
@@ -254,45 +475,52 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
         error.message ||
         "Unable to verify payment."
     });
+
+  } finally {
+    client.release();
   }
 });
 
-
-// ===============================
+// --------------------------------------------------
 // CHECK CUSTOMER BALANCE
-// ===============================
+// --------------------------------------------------
 
-app.get("/api/balance", (req, res) => {
+app.get("/api/balance", async (req, res) => {
+  try {
+    const email =
+      String(req.query.email || "")
+        .trim()
+        .toLowerCase();
 
-  const email =
-    String(req.query.email || "")
-      .trim()
-      .toLowerCase();
+    if (!email) {
+      return res.status(400).json({
+        error: "Email is required."
+      });
+    }
 
-  if (!email) {
-    return res.status(400).json({
-      error: "Email is required."
+    const customer = await getOrCreateCustomer(email);
+
+    res.json({
+      email: customer.email,
+      balance: Number(customer.balance),
+      currency: "GHS"
+    });
+
+  } catch (error) {
+    console.error("Balance error:", error);
+
+    res.status(500).json({
+      error: "Unable to check balance."
     });
   }
-
-  const balance =
-    balances.get(email) || 0;
-
-  res.json({
-    email,
-    balance,
-    currency: "GHS"
-  });
 });
 
-
-// ===============================
+// --------------------------------------------------
 // RENT 5SIM NUMBER
-// ===============================
+// --------------------------------------------------
 
 app.post("/api/buy", async (req, res) => {
   try {
-
     const {
       country,
       operator = "any",
@@ -314,12 +542,22 @@ app.post("/api/buy", async (req, res) => {
       });
     }
 
-    // Check customer balance first.
     const customerEmail =
       String(email).trim().toLowerCase();
 
+    const customerResult = await pool.query(
+      `
+      SELECT email, balance
+      FROM customers
+      WHERE email = $1
+      `,
+      [customerEmail]
+    );
+
     const balance =
-      balances.get(customerEmail) || 0;
+      customerResult.rows.length > 0
+        ? Number(customerResult.rows[0].balance)
+        : 0;
 
     // Get current 5SIM price.
     const priceUrl =
@@ -327,15 +565,13 @@ app.post("/api/buy", async (req, res) => {
       `${encodeURIComponent(country)}` +
       `&product=${encodeURIComponent(product)}`;
 
-    const priceResponse =
-      await fetch(priceUrl, {
-        headers: {
-          Accept: "application/json"
-        }
-      });
+    const priceResponse = await fetch(priceUrl, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
 
-    const priceData =
-      await priceResponse.json();
+    const priceData = await priceResponse.json();
 
     const productData =
       priceData[country] &&
@@ -365,74 +601,24 @@ app.post("/api/buy", async (req, res) => {
       });
     }
 
-    if (balance < fiveSimPrice) {
-      return res.status(402).json({
-        error:
-          `Insufficient MtVerify balance. ` +
-          `Your balance is GH₵${balance.toFixed(2)} ` +
-          `and the current 5SIM price is ${fiveSimPrice}.`,
-        balance,
-        price: fiveSimPrice
-      });
-    }
+    /*
+      IMPORTANT:
+      5SIM's cost is NOT automatically a Ghana-cedi
+      customer price.
 
-    const url =
-      `https://5sim.com/v1/user/buy/activation/` +
-      `${encodeURIComponent(country)}/` +
-      `${encodeURIComponent(operator)}/` +
-      `${encodeURIComponent(product)}`;
+      We are temporarily leaving this rental section
+      in test mode. Before accepting real customer money,
+      we must create a proper GH₵ pricing/markup system.
+    */
 
-    const response =
-      await fetch(url, {
-        headers: {
-          Authorization:
-            `Bearer ${process.env.FIVESIM_API_KEY}`,
-          Accept: "application/json"
-        }
-      });
-
-    const text =
-      await response.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = {
-        message: text
-      };
-    }
-
-    if (!response.ok) {
-
-      return res.status(response.status).json({
-        error:
-          data.message ||
-          data.error ||
-          text
-      });
-    }
-
-    // Deduct the selected 5SIM price
-    // only after 5SIM successfully gives us the number.
-    const remainingBalance =
-      balance - fiveSimPrice;
-
-    balances.set(
-      customerEmail,
-      remainingBalance
-    );
-
-    res.json({
-      ...data,
-      customerEmail,
-      charged: fiveSimPrice,
-      remainingBalance
+    return res.status(400).json({
+      error:
+        "Number rental is temporarily disabled while MtVerify pricing is being configured.",
+      fiveSimCost: fiveSimPrice,
+      customerBalance: balance
     });
 
   } catch (error) {
-
     console.error("5SIM buy error:", error);
 
     res.status(500).json({
@@ -443,34 +629,35 @@ app.post("/api/buy", async (req, res) => {
   }
 });
 
-
-// ===============================
+// --------------------------------------------------
 // CHECK EXISTING 5SIM ORDER
-// ===============================
+// --------------------------------------------------
 
 app.get("/api/order/:id", async (req, res) => {
   try {
+    if (!process.env.FIVESIM_API_KEY) {
+      return res.status(500).json({
+        error: "5SIM API key is not configured."
+      });
+    }
 
-    const response =
-      await fetch(
-        `https://5sim.com/v1/user/check/${encodeURIComponent(req.params.id)}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${process.env.FIVESIM_API_KEY}`,
-            Accept: "application/json"
-          }
+    const response = await fetch(
+      `https://5sim.com/v1/user/check/${encodeURIComponent(req.params.id)}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${process.env.FIVESIM_API_KEY}`,
+          Accept: "application/json"
         }
-      );
+      }
+    );
 
-    const data =
-      await response.json();
+    const data = await response.json();
 
     res.status(response.status).json(data);
 
   } catch (error) {
-
-    console.error(error);
+    console.error("5SIM order error:", error);
 
     res.status(500).json({
       error:
@@ -480,13 +667,28 @@ app.get("/api/order/:id", async (req, res) => {
   }
 });
 
-
-// ===============================
+// --------------------------------------------------
 // START SERVER
-// ===============================
+// --------------------------------------------------
 
-app.listen(PORT, () => {
-  console.log(
-    `MtVerify running on port ${PORT}`
-  );
-});
+async function startServer() {
+  try {
+    await setupDatabase();
+
+    app.listen(PORT, () => {
+      console.log(
+        `MtVerify running on port ${PORT}`
+      );
+    });
+
+  } catch (error) {
+    console.error(
+      "Database startup error:",
+      error
+    );
+
+    process.exit(1);
+  }
+}
+
+startServer();
