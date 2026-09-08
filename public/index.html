@@ -51,12 +51,14 @@
       font-weight: bold;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       padding: 13px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 16px;
+      background: white;
     }
 
     button {
@@ -86,16 +88,17 @@
       word-break: break-word;
     }
 
-    .hidden {
-      display: none;
-    }
-
     .price-box {
       margin-top: 15px;
       padding: 15px;
       background: #eef7ee;
       border-radius: 8px;
       white-space: pre-line;
+      word-break: break-word;
+    }
+
+    .hidden {
+      display: none;
     }
 
     footer {
@@ -125,14 +128,6 @@
         placeholder="Example: england"
       >
 
-      <label for="operator">Operator</label>
-      <input
-        id="operator"
-        type="text"
-        value="any"
-        placeholder="Example: any"
-      >
-
       <label for="service">Service</label>
       <input
         id="service"
@@ -141,14 +136,19 @@
       >
 
       <button id="priceButton">
-        Check Price
+        Check Price & Operators
       </button>
 
+      <label for="operator">Choose Operator</label>
+      <select id="operator" disabled>
+        <option value="">Check price first</option>
+      </select>
+
       <div id="priceResult" class="price-box">
-        Enter a country and service, then tap "Check Price".
+        Enter a country and service, then tap "Check Price & Operators".
       </div>
 
-      <button id="rentButton">
+      <button id="rentButton" disabled>
         Rent Number
       </button>
 
@@ -180,25 +180,47 @@
 
     let orderId = null;
 
-    const countryInput = document.getElementById("country");
-    const operatorInput = document.getElementById("operator");
-    const serviceInput = document.getElementById("service");
+    let availableOperators = {};
 
-    const priceButton = document.getElementById("priceButton");
-    const rentButton = document.getElementById("rentButton");
-    const checkButton = document.getElementById("checkButton");
+    const countryInput =
+      document.getElementById("country");
 
-    const priceResult = document.getElementById("priceResult");
-    const result = document.getElementById("result");
-    const smsResult = document.getElementById("smsResult");
-    const orderSection = document.getElementById("orderSection");
+    const serviceInput =
+      document.getElementById("service");
+
+    const operatorSelect =
+      document.getElementById("operator");
+
+    const priceButton =
+      document.getElementById("priceButton");
+
+    const rentButton =
+      document.getElementById("rentButton");
+
+    const checkButton =
+      document.getElementById("checkButton");
+
+    const priceResult =
+      document.getElementById("priceResult");
+
+    const result =
+      document.getElementById("result");
+
+    const smsResult =
+      document.getElementById("smsResult");
+
+    const orderSection =
+      document.getElementById("orderSection");
 
 
-    // CHECK PRICE
+    // CHECK PRICE AND LOAD OPERATORS
     priceButton.addEventListener("click", async () => {
 
-      const country = countryInput.value.trim().toLowerCase();
-      const product = serviceInput.value.trim().toLowerCase();
+      const country =
+        countryInput.value.trim().toLowerCase();
+
+      const product =
+        serviceInput.value.trim().toLowerCase();
 
       if (!country || !product) {
         priceResult.textContent =
@@ -207,7 +229,12 @@
       }
 
       priceButton.disabled = true;
-      priceResult.textContent = "Checking current price...";
+      rentButton.disabled = true;
+
+      operatorSelect.disabled = true;
+
+      priceResult.textContent =
+        "Checking current prices and operators...";
 
       try {
 
@@ -226,104 +253,200 @@
         }
 
         const countryData = data[country];
+
         const productData =
           countryData && countryData[product];
 
         if (!productData) {
+
           priceResult.textContent =
             "No price or availability was found for this country and service.";
+
+          operatorSelect.innerHTML =
+            '<option value="">No operators available</option>';
+
           return;
         }
 
-        const operators = Object.entries(productData);
+        availableOperators = productData;
+
+        const operators =
+          Object.entries(productData);
 
         if (operators.length === 0) {
+
           priceResult.textContent =
             "No operators are currently available.";
+
+          operatorSelect.innerHTML =
+            '<option value="">No operators available</option>';
+
           return;
         }
 
-        const lines = operators.map(([operator, info]) => {
 
-          let line =
-            `${operator}\n` +
-            `Price: ${info.cost}\n` +
-            `Available: ${info.count}`;
+        // CLEAR OLD OPERATORS
+        operatorSelect.innerHTML = "";
 
-          if (info.rate !== undefined) {
-            line += `\nSMS rate: ${info.rate}%`;
-          }
+        // ADD OPERATORS TO DROPDOWN
+        operators.forEach(([operator, info]) => {
 
-          return line;
+          const option =
+            document.createElement("option");
+
+          option.value = operator;
+
+          option.textContent =
+            `${operator} — Price: ${info.cost} — Available: ${info.count}`;
+
+          operatorSelect.appendChild(option);
+
         });
 
-        priceResult.textContent =
-          "Current prices:\n\n" +
-          lines.join("\n\n");
+        operatorSelect.disabled = false;
+
+
+        // SHOW FIRST OPERATOR
+        updateSelectedPrice();
+
 
       } catch (error) {
 
         priceResult.textContent =
           "Error: " + error.message;
 
+        operatorSelect.innerHTML =
+          '<option value="">Unable to load operators</option>';
+
       } finally {
 
         priceButton.disabled = false;
+
       }
 
     });
 
 
-    // RENT NUMBER
+    // UPDATE PRICE WHEN OPERATOR CHANGES
+    operatorSelect.addEventListener(
+      "change",
+      updateSelectedPrice
+    );
+
+
+    function updateSelectedPrice() {
+
+      const operator =
+        operatorSelect.value;
+
+      if (!operator || !availableOperators[operator]) {
+
+        rentButton.disabled = true;
+
+        return;
+      }
+
+      const info =
+        availableOperators[operator];
+
+      let text =
+        `Selected operator: ${operator}\n` +
+        `Price: ${info.cost}\n` +
+        `Available: ${info.count}`;
+
+      if (info.rate !== undefined) {
+        text +=
+          `\nSMS rate: ${info.rate}%`;
+      }
+
+      priceResult.textContent = text;
+
+      // Only allow renting when a real operator is selected
+      rentButton.disabled = false;
+
+    }
+
+
+    // RENT NUMBER USING EXACT SELECTED OPERATOR
     rentButton.addEventListener("click", async () => {
 
-      const country = countryInput.value.trim().toLowerCase();
+      const country =
+        countryInput.value.trim().toLowerCase();
+
+      const product =
+        serviceInput.value.trim().toLowerCase();
+
       const operator =
-        operatorInput.value.trim().toLowerCase() || "any";
-      const product = serviceInput.value.trim().toLowerCase();
+        operatorSelect.value;
 
       if (!country || !product) {
+
         result.textContent =
           "Please enter the country and service first.";
+
+        return;
+      }
+
+      if (!operator) {
+
+        result.textContent =
+          "Please select an operator first.";
+
+        return;
+      }
+
+      // Make sure the selected operator still exists
+      if (!availableOperators[operator]) {
+
+        result.textContent =
+          "Please check the price again and select an available operator.";
+
         return;
       }
 
       rentButton.disabled = true;
-      result.textContent = "Requesting a number...";
+
+      result.textContent =
+        `Requesting a number from ${operator}...`;
 
       orderSection.classList.add("hidden");
 
       try {
 
-        const response = await fetch("/api/buy", {
+        const response = await fetch(
+          "/api/buy",
+          {
+            method: "POST",
 
-          method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
 
-          headers: {
-            "Content-Type": "application/json"
-          },
+            body: JSON.stringify({
+              country: country,
+              operator: operator,
+              product: product
+            })
+          }
+        );
 
-          body: JSON.stringify({
-            country,
-            operator,
-            product
-          })
-
-        });
-
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!response.ok) {
+
           throw new Error(
             data.error ||
             data.message ||
             "Unable to rent number."
           );
+
         }
 
         orderId = data.id;
 
         result.textContent =
+          `Operator: ${operator}\n` +
           `Number: ${data.phone || "Not provided"}\n` +
           `Order ID: ${data.id}\n` +
           `Status: ${data.status || "active"}`;
@@ -341,6 +464,7 @@
       } finally {
 
         rentButton.disabled = false;
+
       }
 
     });
@@ -350,12 +474,15 @@
     checkButton.addEventListener("click", async () => {
 
       if (!orderId) {
+
         smsResult.textContent =
           "No active order found.";
+
         return;
       }
 
       checkButton.disabled = true;
+
       smsResult.textContent =
         "Checking for SMS...";
 
@@ -365,26 +492,30 @@
           `/api/order/${encodeURIComponent(orderId)}`
         );
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!response.ok) {
+
           throw new Error(
             data.error ||
             data.message ||
             "Unable to check SMS."
           );
+
         }
 
         if (data.sms && data.sms.length > 0) {
 
-          const messages = data.sms.map(message => {
+          const messages =
+            data.sms.map(message => {
 
-            return (
-              `Sender: ${message.sender || "Unknown"}\n` +
-              `Message: ${message.text || ""}`
-            );
+              return (
+                `Sender: ${message.sender || "Unknown"}\n` +
+                `Message: ${message.text || ""}`
+              );
 
-          });
+            });
 
           smsResult.textContent =
             messages.join("\n\n");
@@ -404,6 +535,7 @@
       } finally {
 
         checkButton.disabled = false;
+
       }
 
     });
