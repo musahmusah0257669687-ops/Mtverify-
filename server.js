@@ -20,6 +20,47 @@ app.get("/api/status", (req, res) => {
   });
 });
 
+// Check 5SIM prices without spending balance
+app.get("/api/price", async (req, res) => {
+  try {
+    const country = req.query.country;
+    const product = req.query.product;
+
+    if (!country || !product) {
+      return res.status(400).json({
+        error: "Country and service are required."
+      });
+    }
+
+    const url =
+      `https://5sim.com/v1/guest/prices?country=` +
+      `${encodeURIComponent(country)}` +
+      `&product=${encodeURIComponent(product)}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json(data);
+    }
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("Price error:", error);
+
+    res.status(500).json({
+      error: error.message || "Unable to check price."
+    });
+  }
+});
+
+// Rent a number
 app.post("/api/buy", async (req, res) => {
   try {
     const { country, operator = "any", product } = req.body;
@@ -42,10 +83,7 @@ app.post("/api/buy", async (req, res) => {
       `${encodeURIComponent(operator)}/` +
       `${encodeURIComponent(product)}`;
 
-    console.log("5SIM request:", url);
-
     const response = await fetch(url, {
-      method: "GET",
       headers: {
         Authorization: `Bearer ${process.env.FIVESIM_API_KEY}`,
         Accept: "application/json"
@@ -53,9 +91,6 @@ app.post("/api/buy", async (req, res) => {
     });
 
     const text = await response.text();
-
-    console.log("5SIM status:", response.status);
-    console.log("5SIM response:", text);
 
     let data;
 
@@ -67,14 +102,14 @@ app.post("/api/buy", async (req, res) => {
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: data.message || data.error || text || "5SIM request failed."
+        error: data.message || data.error || text
       });
     }
 
     res.json(data);
 
   } catch (error) {
-    console.error("5SIM connection error:", error);
+    console.error(error);
 
     res.status(500).json({
       error: error.message || "Unable to contact 5SIM."
@@ -82,12 +117,12 @@ app.post("/api/buy", async (req, res) => {
   }
 });
 
+// Check an existing order
 app.get("/api/order/:id", async (req, res) => {
   try {
     const response = await fetch(
       `https://5sim.com/v1/user/check/${encodeURIComponent(req.params.id)}`,
       {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${process.env.FIVESIM_API_KEY}`,
           Accept: "application/json"
@@ -95,20 +130,12 @@ app.get("/api/order/:id", async (req, res) => {
       }
     );
 
-    const text = await response.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { message: text };
-    }
+    const data = await response.json();
 
     res.status(response.status).json(data);
 
   } catch (error) {
-    console.error("Order check error:", error);
+    console.error(error);
 
     res.status(500).json({
       error: error.message || "Unable to check order."
