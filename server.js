@@ -30,10 +30,6 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// --------------------------------------------------
-// DATABASE SETUP
-// --------------------------------------------------
-
 async function setupDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
@@ -60,17 +56,9 @@ async function setupDatabase() {
   console.log("Database tables are ready.");
 }
 
-// --------------------------------------------------
-// HOME
-// --------------------------------------------------
-
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
-// --------------------------------------------------
-// STATUS
-// --------------------------------------------------
 
 app.get("/api/status", async (req, res) => {
   try {
@@ -93,14 +81,15 @@ app.get("/api/status", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-// CHECK 5SIM PRICE
-// --------------------------------------------------
+
+// ===============================
+// 5SIM PRICE
+// ===============================
 
 app.get("/api/price", async (req, res) => {
   try {
-    const country = req.query.country;
-    const product = req.query.product;
+    const country = String(req.query.country || "").trim().toLowerCase();
+    const product = String(req.query.product || "").trim().toLowerCase();
 
     if (!country || !product) {
       return res.status(400).json({
@@ -126,7 +115,6 @@ app.get("/api/price", async (req, res) => {
     }
 
     res.json(data);
-
   } catch (error) {
     console.error("Price error:", error);
 
@@ -136,9 +124,10 @@ app.get("/api/price", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-// CREATE / GET CUSTOMER
-// --------------------------------------------------
+
+// ===============================
+// CUSTOMER
+// ===============================
 
 async function getOrCreateCustomer(email) {
   const cleanEmail = String(email).trim().toLowerCase();
@@ -157,9 +146,10 @@ async function getOrCreateCustomer(email) {
   return result.rows[0];
 }
 
-// --------------------------------------------------
+
+// ===============================
 // PAYSTACK INITIALIZE
-// --------------------------------------------------
+// ===============================
 
 app.post("/api/paystack/initialize", async (req, res) => {
   try {
@@ -194,14 +184,11 @@ app.post("/api/paystack/initialize", async (req, res) => {
 
     await getOrCreateCustomer(cleanEmail);
 
-    const amountInPesewas =
-      Math.round(numericAmount * 100);
+    const amountInPesewas = Math.round(numericAmount * 100);
 
     const reference =
       `MTV-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
 
-    // Save the expected payment before sending
-    // the customer to Paystack.
     await pool.query(
       `
       INSERT INTO payments
@@ -258,7 +245,6 @@ app.post("/api/paystack/initialize", async (req, res) => {
       access_code: data.data.access_code,
       reference: data.data.reference
     });
-
   } catch (error) {
     console.error("Paystack initialize error:", error);
 
@@ -270,9 +256,10 @@ app.post("/api/paystack/initialize", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-// VERIFY PAYSTACK PAYMENT
-// --------------------------------------------------
+
+// ===============================
+// PAYSTACK VERIFY
+// ===============================
 
 app.get("/api/paystack/verify/:reference", async (req, res) => {
   const client = await pool.connect();
@@ -286,7 +273,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
 
     const reference = req.params.reference;
 
-    // Get our saved payment.
     const paymentResult = await client.query(
       `
       SELECT *
@@ -304,7 +290,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
 
     const payment = paymentResult.rows[0];
 
-    // If already credited, NEVER credit again.
     if (payment.status === "success") {
       const customerResult = await client.query(
         `
@@ -327,7 +312,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
       });
     }
 
-    // Ask Paystack for the real transaction status.
     const response = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
       {
@@ -367,8 +351,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
     const paidAmount =
       Number(transaction.amount) / 100;
 
-    // Make sure the payment belongs to the customer
-    // and amount we originally requested.
     if (paystackEmail !== payment.email) {
       return res.status(400).json({
         error: "Payment email does not match the payment record."
@@ -386,8 +368,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Lock the payment row so two simultaneous requests
-    // cannot credit it twice.
     const lockedPaymentResult = await client.query(
       `
       SELECT *
@@ -424,7 +404,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
       });
     }
 
-    // Lock customer row and add the money atomically.
     const customerResult = await client.query(
       `
       INSERT INTO customers (email, balance)
@@ -440,7 +419,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
 
     const customer = customerResult.rows[0];
 
-    // Mark payment as successfully credited.
     await client.query(
       `
       UPDATE payments
@@ -462,7 +440,6 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
       balance: Number(customer.balance),
       reference
     });
-
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -475,15 +452,15 @@ app.get("/api/paystack/verify/:reference", async (req, res) => {
         error.message ||
         "Unable to verify payment."
     });
-
   } finally {
     client.release();
   }
 });
 
-// --------------------------------------------------
-// CHECK CUSTOMER BALANCE
-// --------------------------------------------------
+
+// ===============================
+// BALANCE
+// ===============================
 
 app.get("/api/balance", async (req, res) => {
   try {
@@ -505,7 +482,6 @@ app.get("/api/balance", async (req, res) => {
       balance: Number(customer.balance),
       currency: "GHS"
     });
-
   } catch (error) {
     console.error("Balance error:", error);
 
@@ -515,11 +491,12 @@ app.get("/api/balance", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-// RENT 5SIM NUMBER
-// --------------------------------------------------
 
-    app.post("/api/buy", async (req, res) => {
+// ===============================
+// RENT NUMBER
+// ===============================
+
+app.post("/api/buy", async (req, res) => {
   const client = await pool.connect();
 
   try {
@@ -542,26 +519,27 @@ app.get("/api/balance", async (req, res) => {
       });
     }
 
-    const customerEmail = String(email).trim().toLowerCase();
+    const customerEmail =
+      String(email).trim().toLowerCase();
 
-    const customerResult = await client.query(
-      `
-      SELECT email, balance
-      FROM customers
-      WHERE email = $1
-      FOR UPDATE
-      `,
-      [customerEmail]
-    );
+    const rate =
+      Number(process.env.FIVESIM_GHS_RATE || 1);
 
-    if (customerResult.rows.length === 0) {
-      return res.status(400).json({
-        error: "Please add balance before renting a number."
+    const markupPercent =
+      Number(process.env.MTVERIFY_MARKUP_PERCENT || 30);
+
+    if (
+      !Number.isFinite(rate) ||
+      rate <= 0 ||
+      !Number.isFinite(markupPercent) ||
+      markupPercent < 0
+    ) {
+      return res.status(500).json({
+        error: "MtVerify pricing is not configured correctly."
       });
     }
 
-    const balance = Number(customerResult.rows[0].balance);
-
+    // Get current 5SIM price
     const priceUrl =
       `https://5sim.com/v1/guest/prices?country=` +
       `${encodeURIComponent(country)}` +
@@ -577,7 +555,9 @@ app.get("/api/balance", async (req, res) => {
 
     if (!priceResponse.ok) {
       return res.status(priceResponse.status).json({
-        error: "Unable to get the current 5SIM price."
+        error:
+          priceData.message ||
+          "Unable to get the current 5SIM price."
       });
     }
 
@@ -591,47 +571,47 @@ app.get("/api/balance", async (req, res) => {
 
     if (!selectedOperator) {
       return res.status(400).json({
-        error: "The selected operator is no longer available."
+        error:
+          "The selected operator is no longer available."
       });
     }
 
-    const fiveSimCost = Number(selectedOperator.cost);
+    const fiveSimCost =
+      Number(selectedOperator.cost);
 
-    const rate = Number(process.env.FIVESIM_GHS_RATE || 1);
-    const markupPercent =
-      Number(process.env.MTVERIFY_MARKUP_PERCENT || 30);
+    const available =
+      Number(selectedOperator.count);
 
     if (
       !Number.isFinite(fiveSimCost) ||
-      fiveSimCost <= 0 ||
-      !Number.isFinite(rate) ||
-      rate <= 0 ||
-      !Number.isFinite(markupPercent) ||
-      markupPercent < 0
+      fiveSimCost <= 0
     ) {
-      return res.status(500).json({
-        error: "MtVerify pricing is not configured correctly."
+      return res.status(400).json({
+        error: "Unable to determine the current 5SIM price."
       });
     }
 
+    if (!Number.isFinite(available) || available <= 0) {
+      return res.status(400).json({
+        error: "No numbers are currently available for this operator."
+      });
+    }
+
+    // Convert 5SIM cost to GH₵ and add MtVerify markup.
     const customerPrice =
       Math.ceil(
-        fiveSimCost * rate * (1 + markupPercent / 100) * 100
+        fiveSimCost *
+        rate *
+        (1 + markupPercent / 100) *
+        100
       ) / 100;
 
-    if (balance < customerPrice) {
-      return res.status(400).json({
-        error: "Insufficient MtVerify balance.",
-        price: customerPrice,
-        balance
-      });
-    }
-
+    // Start transaction and lock customer's balance.
     await client.query("BEGIN");
 
-    const lockedCustomer = await client.query(
+    const customerResult = await client.query(
       `
-      SELECT balance
+      SELECT email, balance
       FROM customers
       WHERE email = $1
       FOR UPDATE
@@ -639,30 +619,47 @@ app.get("/api/balance", async (req, res) => {
       [customerEmail]
     );
 
-    if (
-      lockedCustomer.rows.length === 0 ||
-      Number(lockedCustomer.rows[0].balance) < customerPrice
-    ) {
+    if (customerResult.rows.length === 0) {
       await client.query("ROLLBACK");
 
       return res.status(400).json({
-        error: "Insufficient MtVerify balance."
+        error: "Please add balance before renting a number."
       });
     }
 
-    await client.query(
-      `
-      UPDATE customers
-      SET
-        balance = balance - $1,
-        updated_at = NOW()
-      WHERE email = $2
-      `,
-      [customerPrice, customerEmail]
-    );
+    const balance =
+      Number(customerResult.rows[0].balance);
+
+    if (balance < customerPrice) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "Insufficient MtVerify balance.",
+        price: customerPrice,
+        balance
+      });
+    }
+
+    // Reserve customer money before contacting 5SIM.
+    const updatedCustomer =
+      await client.query(
+        `
+        UPDATE customers
+        SET
+          balance = balance - $1,
+          updated_at = NOW()
+        WHERE email = $2
+        RETURNING email, balance
+        `,
+        [customerPrice, customerEmail]
+      );
+
+    const remainingBalance =
+      Number(updatedCustomer.rows[0].balance);
 
     await client.query("COMMIT");
 
+    // Purchase the number from 5SIM.
     const buyUrl =
       `https://5sim.com/v1/user/buy/activation/` +
       `${encodeURIComponent(country)}/` +
@@ -679,8 +676,9 @@ app.get("/api/balance", async (req, res) => {
 
     const buyData = await buyResponse.json();
 
+    // Refund if 5SIM purchase fails.
     if (!buyResponse.ok) {
-      await client.query(
+      await pool.query(
         `
         UPDATE customers
         SET
@@ -691,7 +689,7 @@ app.get("/api/balance", async (req, res) => {
         [customerPrice, customerEmail]
       );
 
-      return res.status(buyResponse.status).json({
+      return res.status(buyResponse.status || 400).json({
         error:
           buyData.message ||
           "5SIM could not provide a number. Your balance was refunded."
@@ -703,8 +701,10 @@ app.get("/api/balance", async (req, res) => {
       order: buyData,
       fiveSimCost,
       price: customerPrice,
-      currency: "GHS"
+      currency: "GHS",
+      remainingBalance
     });
+
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -720,36 +720,43 @@ app.get("/api/balance", async (req, res) => {
   } finally {
     client.release();
   }
-});  
+});
 
-// --------------------------------------------------
-// CHECK EXISTING 5SIM ORDER
-// --------------------------------------------------
+
+// ===============================
+// CHECK SMS / ORDER
+// ===============================
 
 app.get("/api/order/:id", async (req, res) => {
   try {
     if (!process.env.FIVESIM_API_KEY) {
-      return res.status(500).jsobalab  error: "5SIM API key is not configured."
+      return res.status(500).json({
+        error: "5SIM API key is not configured."
       });
     }
 
-    const response = await fetch(
-      `https://5sim.com/v1/user/check/${encodeURIComponent(req.params.id)}`,
-      {
-        headers: {
-          Authorization:
-            `Bearer ${process.env.FIVESIM_API_KEY}`,
-          Accept: "application/json"
-        }
-      }
-    );
+    const orderId =
+      encodeURIComponent(req.params.id);
 
-    const data = await response.json();
+    const response =
+      await fetch(
+        `https://5sim.com/v1/user/check/${orderId}`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${process.env.FIVESIM_API_KEY}`,
+            Accept: "application/json"
+          }
+        }
+      );
+
+    const data =
+      await response.json();
 
     res.status(response.status).json(data);
 
   } catch (error) {
-    console.error("5SIM order error:", error);
+    console.error("Order check error:", error);
 
     res.status(500).json({
       error:
@@ -759,9 +766,10 @@ app.get("/api/order/:id", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
+
+// ===============================
 // START SERVER
-// --------------------------------------------------
+// ===============================
 
 async function startServer() {
   try {
