@@ -300,7 +300,20 @@ async function setupDatabase() {
     CREATE INDEX IF NOT EXISTS orders_email_idx
     ON orders(email)
   `);
+await pool.query(`
+  ALTER TABLE customers
+  ADD COLUMN IF NOT EXISTS password_hash TEXT
+`);
 
+await pool.query(`
+  ALTER TABLE customers
+  ADD COLUMN IF NOT EXISTS password_salt TEXT
+`);
+
+await pool.query(`
+  ALTER TABLE customers
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+`);
   console.log("Database tables are ready.");
 }
 }=======================================================
