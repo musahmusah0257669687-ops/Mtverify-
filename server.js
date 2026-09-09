@@ -23,7 +23,40 @@ const pool = new Pool({
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.get("/api/catalog", requireLogin, async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://5sim.com/v1/guest/prices",
+      {
+        headers: {
+          Accept: "application/json"
+        }
+      }
+    );
 
+    const data = await readResponse(response);
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: getApiMessage(
+          data,
+          "Unable to load 5SIM catalog."
+        )
+      });
+    }
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("Catalog error:", error);
+
+    res.status(500).json({
+      error:
+        error.message ||
+        "Unable to load 5SIM catalog."
+    });
+  }
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================================================
