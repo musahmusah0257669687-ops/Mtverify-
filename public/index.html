@@ -1,1084 +1,395 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MtVerify</title>
-
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f4f7fb;
-      color: #222;
-    }
-
-    .container {
-      max-width: 520px;
-      margin: 30px auto;
+      max-width: 600px;
+      margin: 0 auto;
       padding: 20px;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 36px;
-    }
-
-    .header p {
-      color: #666;
-    }
-
-    .card {
-      background: white;
-      padding: 24px;
-      margin-bottom: 18px;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    }
-
-    label {
-      display: block;
-      margin: 14px 0 7px;
-      font-weight: bold;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      background: white;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #111;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .balance {
-      font-size: 26px;
-      font-weight: bold;
-      margin-top: 8px;
-    }
-
-    .result {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 8px;
-      background: #f1f3f6;
-      white-space: pre-line;
-      word-break: break-word;
-    }
-
-    .price {
-      background: #eef7ee;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .note {
-      color: #666;
-      font-size: 13px;
-      margin-top: 8px;
-    }
-
-    footer {
-      text-align: center;
-      color: #777;
-      font-size: 13px;
-      margin: 25px 0;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <div class="header">
-    <h1>MtVerify</h1>
-    <p>Virtual number verification service</p>
-  </div>
-
-
-  <!-- CUSTOMER ACCOUNT -->
-
-  <div class="card">
-
-    <h2>Customer Account</h2>
-
-    <label for="email">Email Address</label>
-
-    <input
-      id="email"
-      type="email"
-      placeholder="you@example.com"
-    >
-
-    <button id="balanceButton">
-      Check Balance
-    </button>
-
-    <div class="balance">
-      Balance: GH₵<span id="balance">0.00</span>
-    </div>
-
-  </div>
-
-
-  <!-- DEPOSIT -->
-
-  <div class="card">
-
-    <h2>Add Balance</h2>
-
-    <label for="depositAmount">
-      Deposit Amount (GH₵)
-    </label>
-
-    <input
-      id="depositAmount"
-      type="number"
-      min="1"
-      step="0.01"
-      placeholder="Example: 50"
-    >
-
-    <button id="payButton">
-      Pay with Paystack
-    </button>
-
-    <div id="paymentResult" class="result">
-      Enter your email and deposit amount.
-    </div>
-
-  </div>
-
-
-  <!-- RENT NUMBER -->
-
-  <div class="card">
-
-    <h2>Rent a Number</h2>
-
-    <label for="country">
-      Country
-    </label>
-
-    <select id="country">
-      <option value="">
-        Select country
-      </option>
-
-      <option value="england">
-        🇬🇧 England
-      </option>
-
-      <option value="usa">
-        🇺🇸 United States
-      </option>
-
-      <option value="canada">
-        🇨🇦 Canada
-      </option>
-
-      <option value="germany">
-        🇩🇪 Germany
-      </option>
-
-      <option value="france">
-        🇫🇷 France
-      </option>
-
-      <option value="italy">
-        🇮🇹 Italy
-      </option>
-
-      <option value="spain">
-        🇪🇸 Spain
-      </option>
-
-      <option value="netherlands">
-        🇳🇱 Netherlands
-      </option>
-
-      <option value="poland">
-        🇵🇱 Poland
-      </option>
-
-      <option value="romania">
-        🇷🇴 Romania
-      </option>
-
-      <option value="australia">
-        🇦🇺 Australia
-      </option>
-
-      <option value="india">
-        🇮🇳 India
-      </option>
-
-      <option value="indonesia">
-        🇮🇩 Indonesia
-      </option>
-
-      <option value="brazil">
-        🇧🇷 Brazil
-      </option>
-
-      <option value="mexico">
-        🇲🇽 Mexico
-      </option>
-
-      <option value="southafrica">
-        🇿🇦 South Africa
-      </option>
-
-      <option value="ghana">
-        🇬🇭 Ghana
-      </option>
-    </select>
-
-
-    <label for="service">
-      Service
-    </label>
-
-    <select id="service">
-
-      <option value="">
-        Select service
-      </option>
-
-      <option value="telegram">
-        Telegram
-      </option>
-
-      <option value="whatsapp">
-        WhatsApp
-      </option>
-
-      <option value="google">
-        Google
-      </option>
-
-      <option value="facebook">
-        Facebook
-      </option>
-
-      <option value="instagram">
-        Instagram
-      </option>
-
-      <option value="tiktok">
-        TikTok
-      </option>
-
-      <option value="twitter">
-        X / Twitter
-      </option>
-
-      <option value="microsoft">
-        Microsoft
-      </option>
-
-      <option value="discord">
-        Discord
-      </option>
-
-      <option value="amazon">
-        Amazon
-      </option>
-
-      <option value="uber">
-        Uber
-      </option>
-
-      <option value="airbnb">
-        Airbnb
-      </option>
-
-      <option value="binance">
-        Binance
-      </option>
-
-      <option value="snapchat">
-        Snapchat
-      </option>
-
-      <option value="other">
-        Other
-      </option>
-
-    </select>
-
-    <div class="note">
-      Select a country and service, then check availability.
-    </div>
-
-
-    <button id="priceButton">
-      Check Price & Operators
-    </button>
-
-
-    <label for="operator">
-      Choose Operator
-    </label>
-
-    <select id="operator" disabled>
-
-      <option value="">
-        Check price first
-      </option>
-
-    </select>
-
-
-    <div id="priceResult" class="result price">
-      Select country and service, then check the price.
-    </div>
-
-
-    <button id="rentButton" disabled>
-      Rent Number
-    </button>
-
-
-    <div id="result" class="result">
-      Ready.
-    </div>
-
-
-    <div id="orderSection" class="hidden">
-
-      <button id="checkButton">
-        Check SMS
-      </button>
-
-      <div id="smsResult" class="result">
-        Waiting for SMS...
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <footer>
-    MtVerify © 2026 — For lawful verification and testing purposes.
-  </footer>
-
-</div>
-
-
-<script>
-
-let orderId = null;
-let availableOperators = {};
-
-
-// ELEMENTS
-
-const emailInput =
-  document.getElementById("email");
-
-const depositInput =
-  document.getElementById("depositAmount");
-
-const balanceDisplay =
-  document.getElementById("balance");
-
-const balanceButton =
-  document.getElementById("balanceButton");
-
-const payButton =
-  document.getElementById("payButton");
-
-const paymentResult =
-  document.getElementById("paymentResult");
-
-const countryInput =
-  document.getElementById("country");
-
-const serviceInput =
-  document.getElementById("service");
-
-const priceButton =
-  document.getElementById("priceButton");
-
-const operatorSelect =
-  document.getElementById("operator");
-
-const priceResult =
-  document.getElementById("priceResult");
-
-const rentButton =
-  document.getElementById("rentButton");
-
-const result =
-  document.getElementById("result");
-
-const orderSection =
-  document.getElementById("orderSection");
-
-const checkButton =
-  document.getElementById("checkButton");
-
-const smsResult =
-  document.getElementById("smsResult");
-
-
-// ===============================
-// CHECK BALANCE
-// ===============================
-
-balanceButton.addEventListener("click", async () => {
-
-  const email =
-    emailInput.value.trim().toLowerCase();
-
-  if (!email) {
-
-    paymentResult.textContent =
-      "Please enter your email address.";
-
-    return;
-  }
-
-  balanceButton.disabled = true;
-
-  try {
-
-    const response = await fetch(
-      `/api/balance?email=${encodeURIComponent(email)}`
-    );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || "Unable to check balance."
-      );
-    }
-
-    balanceDisplay.textContent =
-      Number(data.balance).toFixed(2);
-
-  } catch (error) {
-
-    paymentResult.textContent =
-      "Error: " + error.message;
-
-  } finally {
-
-    balanceButton.disabled = false;
-
-  }
-
-});
-
-
-// ===============================
-// PAYSTACK PAYMENT
-// ===============================
-
-payButton.addEventListener("click", async () => {
-
-  const email =
-    emailInput.value.trim().toLowerCase();
-
-  const amount =
-    Number(depositInput.value);
-
-  if (!email) {
-
-    paymentResult.textContent =
-      "Please enter your email address.";
-
-    return;
-  }
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-
-    paymentResult.textContent =
-      "Please enter a valid deposit amount.";
-
-    return;
-  }
-
-  payButton.disabled = true;
-
-  paymentResult.textContent =
-    "Starting Paystack payment...";
-
-  try {
-
-    const response = await fetch(
-      "/api/paystack/initialize",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          email,
-          amount
-        })
-      }
-    );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.error ||
-        "Unable to start payment."
-      );
-
-    }
-
-    localStorage.setItem(
-      "mtverify_reference",
-      data.reference
-    );
-
-    localStorage.setItem(
-      "mtverify_email",
-      email
-    );
-
-    window.location.href =
-      data.authorization_url;
-
-  } catch (error) {
-
-    paymentResult.textContent =
-      "Payment error: " +
-      error.message;
-
-    payButton.disabled = false;
-
-  }
-
-});
-
-
-// ===============================
-// VERIFY PAYMENT AFTER RETURN
-// ===============================
-
-async function verifyReturnedPayment() {
-
-  const reference =
-    localStorage.getItem(
-      "mtverify_reference"
-    );
-
-  const savedEmail =
-    localStorage.getItem(
-      "mtverify_email"
-    );
-
-  if (!reference) {
-    return;
-  }
-
-  paymentResult.textContent =
-    "Verifying your payment...";
-
-  try {
-
-    const response = await fetch(
-      `/api/paystack/verify/${encodeURIComponent(reference)}`
-    );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.error ||
-        "Payment verification failed."
-      );
-
-    }
-
-    if (
-      savedEmail &&
-      data.email &&
-      data.email.toLowerCase() ===
-      savedEmail.toLowerCase()
-    ) {
-
-      emailInput.value =
-        savedEmail;
-
-    }
-
-    balanceDisplay.textContent =
-      Number(data.balance).toFixed(2);
-
-    paymentResult.textContent =
-      `Payment successful!\n` +
-      `Added: GH₵${Number(data.paidAmount).toFixed(2)}\n` +
-      `Balance: GH₵${Number(data.balance).toFixed(2)}`;
-
-    localStorage.removeItem(
-      "mtverify_reference"
-    );
-
-    localStorage.removeItem(
-      "mtverify_email"
-    );
-
-  } catch (error) {
-
-    paymentResult.textContent =
-      "Payment verification: " +
-      error.message;
-
-  }
-
+      background: #f5f5f5;
+    }.box {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+h1 {
+  text-align: center;
+}
 
-// ===============================
-// CHECK PRICE
-// ===============================
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
 
-priceButton.addEventListener("click", async () => {
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
 
-  const country =
-    countryInput.value.trim().toLowerCase();
+button {
+  margin-top: 12px;
+  cursor: pointer;
+  background: #111;
+  color: white;
+  border: none;
+}
 
-  const product =
-    serviceInput.value.trim().toLowerCase();
+button:hover {
+  opacity: 0.9;
+}
 
-  if (!country || !product) {
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
-    priceResult.textContent =
-      "Please select country and service.";
+  </style>
+</head><body>  <h1>MtVerify</h1>  <div class="box">
+    <h2>Customer Account</h2><label>Email</label>
+<input id="email" type="email" placeholder="Enter your email">
 
+<button onclick="checkBalance()">Check Balance</button>
+
+<div id="balanceResult" class="result"></div>
+
+  </div>  <div class="box">
+    <h2>Add Balance</h2><label>Amount (GH₵)</label>
+<input id="depositAmount" type="number" min="1" step="0.01" placeholder="Enter amount">
+
+<button onclick="addBalance()">Pay with Paystack</button>
+
+<div id="paymentResult" class="result"></div>
+
+  </div>  <div class="box">
+    <h2>Rent a Number</h2><label>Country</label>
+<select id="country">
+  <option value="">Select country</option>
+  <option value="ghana">Ghana</option>
+  <option value="nigeria">Nigeria</option>
+  <option value="usa">United States</option>
+  <option value="uk">United Kingdom</option>
+  <option value="canada">Canada</option>
+  <option value="india">India</option>
+  <option value="germany">Germany</option>
+  <option value="france">France</option>
+  <option value="italy">Italy</option>
+  <option value="spain">Spain</option>
+  <option value="netherlands">Netherlands</option>
+  <option value="australia">Australia</option>
+  <option value="poland">Poland</option>
+  <option value="romania">Romania</option>
+  <option value="indonesia">Indonesia</option>
+  <option value="philippines">Philippines</option>
+  <option value="vietnam">Vietnam</option>
+</select>
+
+<label>Service</label>
+<select id="product">
+  <option value="">Select service</option>
+  <option value="whatsapp">WhatsApp</option>
+  <option value="telegram">Telegram</option>
+  <option value="google">Google</option>
+  <option value="facebook">Facebook</option>
+  <option value="instagram">Instagram</option>
+  <option value="tiktok">TikTok</option>
+  <option value="twitter">Twitter</option>
+  <option value="microsoft">Microsoft</option>
+  <option value="discord">Discord</option>
+  <option value="uber">Uber</option>
+  <option value="amazon">Amazon</option>
+  <option value="snapchat">Snapchat</option>
+</select>
+
+<label>Operator</label>
+<select id="operator">
+  <option value="any">Any operator</option>
+</select>
+
+<button onclick="checkPrice()">Check Price & Operators</button>
+
+<button onclick="rentNumber()">Rent Number</button>
+
+<div id="priceResult" class="result"></div>
+<div id="rentResult" class="result"></div>
+
+  </div>  <div class="box">
+    <h2>Check SMS</h2><label>Order ID</label>
+<input id="orderId" type="text" placeholder="Enter order ID">
+
+<button onclick="checkSms()">Check SMS</button>
+
+<div id="smsResult" class="result"></div>
+
+  </div><script>
+async function checkBalance() {
+  const email = document.getElementById("email").value.trim();
+
+  if (!email) {
+    document.getElementById("balanceResult").textContent =
+      "Please enter your email.";
     return;
   }
 
-  priceButton.disabled = true;
-
-  rentButton.disabled = true;
-
-  operatorSelect.disabled = true;
-
-  priceResult.textContent =
-    "Checking prices...";
-
   try {
-
     const response = await fetch(
-      `/api/price?country=${encodeURIComponent(country)}&product=${encodeURIComponent(product)}`
+      "/api/balance?email=" + encodeURIComponent(email)
     );
 
-    const data =
-      await response.json();
+    const data = await response.json();
 
     if (!response.ok) {
-
-      throw new Error(
-        data.error ||
-        "Unable to check price."
-      );
-
+      throw new Error(data.error || "Unable to check balance.");
     }
 
-    const countryData =
-      data[country];
+    document.getElementById("balanceResult").textContent =
+      "Balance: GH₵" + Number(data.balance).toFixed(2);
+  } catch (error) {
+    document.getElementById("balanceResult").textContent =
+      error.message;
+  }
+}
+
+async function addBalance() {
+  const email = document.getElementById("email").value.trim();
+  const amount = document.getElementById("depositAmount").value;
+
+  if (!email) {
+    document.getElementById("paymentResult").textContent =
+      "Please enter your email first.";
+    return;
+  }
+
+  if (!amount || Number(amount) <= 0) {
+    document.getElementById("paymentResult").textContent =
+      "Please enter a valid amount.";
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/paystack/initialize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        amount: Number(amount)
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to start payment.");
+    }
+
+    window.location.href = data.authorization_url;
+  } catch (error) {
+    document.getElementById("paymentResult").textContent =
+      error.message;
+  }
+}
+
+async function checkPrice() {
+  const country = document.getElementById("country").value;
+  const product = document.getElementById("product").value;
+  const operatorSelect = document.getElementById("operator");
+  const result = document.getElementById("priceResult");
+
+  if (!country || !product) {
+    result.textContent = "Please select a country and service.";
+    return;
+  }
+
+  result.textContent = "Checking current price...";
+
+  try {
+    const response = await fetch(
+      "/api/price?country=" +
+      encodeURIComponent(country) +
+      "&product=" +
+      encodeURIComponent(product)
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || "Unable to check price."
+      );
+    }
 
     const productData =
-      countryData &&
-      countryData[product];
+      data[country] && data[country][product];
 
     if (!productData) {
-
-      priceResult.textContent =
-        "No operators are available for this selection.";
-
       operatorSelect.innerHTML =
-        '<option value="">No operators</option>';
+        '<option value="any">Any operator</option>';
 
+      result.textContent =
+        "No operators are currently available for this selection.";
       return;
     }
-
-    availableOperators =
-      productData;
-
-    const operators =
-      Object.entries(productData);
 
     operatorSelect.innerHTML = "";
 
-    operators.forEach(
-      ([operator, info]) => {
+    const anyOption = document.createElement("option");
+    anyOption.value = "any";
+    anyOption.textContent = "Any operator";
+    operatorSelect.appendChild(anyOption);
 
-        const option =
-          document.createElement("option");
+    const operators = Object.keys(productData);
 
-        option.value =
-          operator;
+    if (operators.length === 0) {
+      result.textContent =
+        "No operators are currently available.";
+      return;
+    }
 
-        option.textContent =
-          `${operator} — ${info.cost} — ${info.count} available`;
+    operators.forEach(function(operator) {
+      const option = document.createElement("option");
+      option.value = operator;
+      option.textContent = operator;
+      operatorSelect.appendChild(option);
+    });
 
-        operatorSelect.appendChild(option);
+    let text = "Available operators:\n\n";
 
-      }
-    );
+    operators.forEach(function(operator) {
+      const info = productData[operator];
 
-    operatorSelect.disabled = false;
+      text +=
+        operator +
+        " — Price: " +
+        info.cost +
+        " | Available: " +
+        info.count +
+        "\n";
+    });
 
-    updateSelectedPrice();
+    result.textContent = text;
 
   } catch (error) {
-
-    priceResult.textContent =
-      "Error: " + error.message;
-
-  } finally {
-
-    priceButton.disabled = false;
-
+    result.textContent = error.message;
   }
+}
 
-});
+async function rentNumber() {
+  const email = document.getElementById("email").value.trim();
+  const country = document.getElementById("country").value;
+  const product = document.getElementById("product").value;
+  const operator = document.getElementById("operator").value;
+  const result = document.getElementById("rentResult");
 
-
-// ===============================
-// OPERATOR CHANGE
-// ===============================
-
-operatorSelect.addEventListener(
-  "change",
-  updateSelectedPrice
-);
-
-
-function updateSelectedPrice() {
-
-  const operator =
-    operatorSelect.value;
-
-  const info =
-    availableOperators[operator];
-
-  if (!operator || !info) {
-
-    rentButton.disabled = true;
-
+  if (!email) {
+    result.textContent = "Please enter your email.";
     return;
   }
 
-  let text =
-    `Selected operator: ${operator}\n` +
-    `5SIM price: ${info.cost}\n` +
-    `Available: ${info.count}`;
-
-  if (info.rate !== undefined) {
-
-    text +=
-      `\nSMS rate: ${info.rate}%`;
-
+  if (!country || !product) {
+    result.textContent =
+      "Please select a country and service.";
+    return;
   }
 
-  priceResult.textContent =
-    text;
+  result.textContent = "Renting number...";
 
-  rentButton.disabled =
-    Number(info.count) <= 0;
+  try {
+    const response = await fetch("/api/buy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        country,
+        product,
+        operator
+      })
+    });
 
-}
+    const data = await response.json();
 
-
-// ===============================
-// RENT NUMBER
-// ===============================
-
-rentButton.addEventListener(
-  "click",
-  async () => {
-
-    const email =
-      emailInput.value.trim().toLowerCase();
-
-    const country =
-      countryInput.value.trim().toLowerCase();
-
-    const product =
-      serviceInput.value.trim().toLowerCase();
-
-    const operator =
-      operatorSelect.value;
-
-    if (!email) {
-
-      result.textContent =
-        "Enter your email address first.";
-
-      return;
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Unable to rent number."
+      );
     }
 
-    if (!country || !product) {
-
-      result.textContent =
-        "Please select country and service.";
-
-      return;
-    }
-
-    if (!operator) {
-
-      result.textContent =
-        "Please select an operator.";
-
-      return;
-    }
-
-    const info =
-      availableOperators[operator];
-
-    if (!info) {
-
-      result.textContent =
-        "Please check the price again.";
-
-      return;
-    }
-
-    rentButton.disabled = true;
+    const order = data.order || {};
 
     result.textContent =
-      `Renting from ${operator}...`;
+      "Number rented successfully!\n\n" +
+      "Phone number: " +
+      (order.phone || "Not provided") +
+      "\nOrder ID: " +
+      (order.id || "Not provided") +
+      "\nPrice: GH₵" +
+      Number(data.price || 0).toFixed(2) +
+      "\nRemaining balance: GH₵" +
+      Number(data.remainingBalance || 0).toFixed(2);
 
-    try {
-
-      const response = await fetch(
-        "/api/buy",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            email,
-            country,
-            operator,
-            product
-          })
-        }
-      );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          "Unable to rent number."
-        );
-
-      }
-
-      const order =
-        data.order || data;
-
-      orderId =
-        order.id;
-
-      const phone =
-        order.phone ||
-        order.number ||
-        "Not provided";
-
-      const charged =
-        Number(data.price || data.charged || 0);
-
-      result.textContent =
-        `Operator: ${operator}\n` +
-        `Number: ${phone}\n` +
-        `Order ID: ${order.id}\n` +
-        `Charged: GH₵${charged.toFixed(2)}`;
-
-      if (
-        data.remainingBalance !== undefined
-      ) {
-
-        result.textContent +=
-          `\nRemaining balance: GH₵${Number(data.remainingBalance).toFixed(2)}`;
-
-        balanceDisplay.textContent =
-          Number(data.remainingBalance).toFixed(2);
-
-      } else {
-
-        // Refresh balance from the server
-        const balanceResponse =
-          await fetch(
-            `/api/balance?email=${encodeURIComponent(email)}`
-          );
-
-        const balanceData =
-          await balanceResponse.json();
-
-        if (balanceResponse.ok) {
-
-          balanceDisplay.textContent =
-            Number(balanceData.balance).toFixed(2);
-
-          result.textContent +=
-            `\nRemaining balance: GH₵${Number(balanceData.balance).toFixed(2)}`;
-
-        }
-
-      }
-
-      orderSection.classList.remove(
-        "hidden"
-      );
-
-      smsResult.textContent =
-        "Waiting for SMS...";
-
-    } catch (error) {
-
-      result.textContent =
-        "Error: " + error.message;
-
-    } finally {
-
-      rentButton.disabled = false;
-
+    if (order.id) {
+      document.getElementById("orderId").value = order.id;
     }
 
+  } catch (error) {
+    result.textContent = error.message;
   }
-);
+}
 
+async function checkSms() {
+  const orderId =
+    document.getElementById("orderId").value.trim();
 
-// ===============================
-// CHECK SMS
-// ===============================
+  const result =
+    document.getElementById("smsResult");
 
-checkButton.addEventListener(
-  "click",
-  async () => {
-
-    if (!orderId) {
-
-      smsResult.textContent =
-        "No active order.";
-
-      return;
-    }
-
-    checkButton.disabled = true;
-
-    smsResult.textContent =
-      "Checking for SMS...";
-
-    try {
-
-      const response =
-        await fetch(
-          `/api/order/${encodeURIComponent(orderId)}`
-        );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          "Unable to check SMS."
-        );
-
-      }
-
-      if (
-        data.sms &&
-        data.sms.length > 0
-      ) {
-
-        smsResult.textContent =
-          data.sms
-            .map(message =>
-              `Sender: ${message.sender || "Unknown"}\n` +
-              `Message: ${message.text || ""}`
-            )
-            .join("\n\n");
-
-      } else {
-
-        smsResult.textContent =
-          "No SMS received yet. Try again.";
-
-      }
-
-    } catch (error) {
-
-      smsResult.textContent =
-        "Error: " + error.message;
-
-    } finally {
-
-      checkButton.disabled = false;
-
-    }
-
+  if (!orderId) {
+    result.textContent = "Please enter an order ID.";
+    return;
   }
-);
 
+  result.textContent = "Checking SMS...";
 
-// ===============================
-// CHECK WHETHER WE RETURNED
-// FROM PAYSTACK
-// ===============================
+  try {
+    const response = await fetch(
+      "/api/order/" +
+      encodeURIComponent(orderId)
+    );
 
-verifyReturnedPayment();
+    const data = await response.json();
 
-</script>
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        "Unable to check SMS."
+      );
+    }
 
-</body>
+    result.textContent =
+      JSON.stringify(data, null, 2);
+
+  } catch (error) {
+    result.textContent = error.message;
+  }
+}
+</script></body>
 </html>
