@@ -1,106 +1,68 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MtVerify</title><style>
-body {
-  font-family: Arial, sans-serif;
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-  background: #f5f5f5;
-}
+<title>MtVerify</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;background:#f5f5f5}
+.box{background:white;padding:20px;margin-bottom:15px;border-radius:12px}
+h1{text-align:center}
+input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border-radius:8px;border:1px solid #ccc;font-size:16px}
+button{background:#111;color:white;border:none}
+.result{margin-top:10px;padding:12px;background:#eee;border-radius:8px;white-space:pre-wrap;word-break:break-word}
+.operator-button{background:white;color:#111;border:2px solid #ccc;text-align:left}
+.operator-button.selected{border:3px solid #111;background:#eee}
+.operator-button:disabled{background:#ddd;color:#777}
+</style>
+</head>
+<body>
 
-.box {
-  background: white;
-  padding: 20px;
-  margin-bottom: 15px;
-  border-radius: 12px;
-}
+<h1>MtVerify</h1>
 
-h1 {
-  text-align: center;
-}
+<div id="auth" class="box">
+<h2>Welcome</h2>
 
-label {
-  display: block;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  font-weight: bold;
-}
+<div id="signupBox">
+<h3>Create Account</h3>
+<input id="signupEmail" type="email" placeholder="Email">
+<input id="signupPassword" type="password" placeholder="Password (8+ characters)">
+<button onclick="signup()">Sign Up</button>
+</div>
 
-input, select, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 6px;
-  box-sizing: border-box;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
+<hr>
 
-button {
-  background: #111;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
+<div id="loginBox">
+<h3>Sign In</h3>
+<input id="loginEmail" type="email" placeholder="Email">
+<input id="loginPassword" type="password" placeholder="Password">
+<button onclick="login()">Sign In</button>
+</div>
 
-button:disabled {
-  opacity: 0.5;
-}
+<div id="authResult" class="result"></div>
+</div>
 
-.operator-list {
-  margin-top: 10px;
-}
+<div id="dashboard" style="display:none">
 
-.operator-button {
-  display: block;
-  width: 100%;
-  margin: 8px 0;
-  padding: 14px;
-  background: white;
-  color: #111;
-  border: 2px solid #ccc;
-  text-align: left;
-}
+<div class="box">
+<h2>My Account</h2>
+<p id="accountEmail"></p>
+<p id="balance">Balance: GH₵0.00</p>
+<button onclick="checkBalance()">Refresh Balance</button>
+<button onclick="logout()">Sign Out</button>
+</div>
 
-.operator-button.selected {
-  border: 3px solid #111;
-  background: #eee;
-}
-
-.operator-button:disabled {
-  background: #ddd;
-  color: #777;
-  cursor: not-allowed;
-}
-
-.result {
-  margin-top: 15px;
-  padding: 12px;
-  background: #eee;
-  border-radius: 8px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-</style></head><body><h1>MtVerify</h1><div class="box">
-<h2>Customer Account</h2><label>Email</label>
-<input id="email" type="email" placeholder="Enter your email">
-
-<button onclick="checkBalance()">Check Balance</button>
-
-<div id="balanceResult" class="result"></div>
-</div><div class="box">
-<h2>Add Balance</h2><label>Amount (GH₵)</label>
-<input id="depositAmount" type="number" min="1" step="0.01" placeholder="Enter amount">
-
+<div class="box">
+<h2>Add Balance</h2>
+<input id="depositAmount" type="number" min="1" step="0.01" placeholder="Amount in GH₵">
 <button onclick="addBalance()">Pay with Paystack</button>
-
 <div id="paymentResult" class="result"></div>
-</div><div class="box">
-<h2>Rent a Number</h2><label>Country</label>
+</div>
 
+<div class="box">
+<h2>Rent a Number</h2>
+
+<label>Country</label>
 <select id="country">
 <option value="">Select country</option>
 <option value="ghana">Ghana</option>
@@ -120,8 +82,9 @@ button:disabled {
 <option value="indonesia">Indonesia</option>
 <option value="philippines">Philippines</option>
 <option value="vietnam">Vietnam</option>
-</select><label>Service</label>
+</select>
 
+<label>Service</label>
 <select id="product">
 <option value="">Select service</option>
 <option value="whatsapp">WhatsApp</option>
@@ -136,437 +99,236 @@ button:disabled {
 <option value="uber">Uber</option>
 <option value="amazon">Amazon</option>
 <option value="snapchat">Snapchat</option>
-</select><button onclick="checkPrice()">Check Price & Operators</button>
+</select>
 
-<h3>Choose Operator</h3><div id="operatorList" class="operator-list">
-Please check price first.
-</div><button onclick="rentNumber()">Rent Number</button>
+<button onclick="checkPrice()">Check Price & Operators</button>
 
-<div id="priceResult" class="result"></div><div id="rentResult" class="result"></div></div><div class="box">
-<h2>Check SMS</h2><label>Order ID</label>
+<div id="operatorList" class="result">Please check price first.</div>
 
-<input id="orderId" type="text" placeholder="Enter order ID"><button onclick="checkSms()">Check SMS</button>
+<button onclick="rentNumber()">Rent Number</button>
+<div id="priceResult" class="result"></div>
+<div id="rentResult" class="result"></div>
+</div>
 
+<div class="box">
+<h2>Check SMS</h2>
+<input id="orderId" type="text" placeholder="Order ID">
+<button onclick="checkSms()">Check SMS</button>
 <div id="smsResult" class="result"></div>
-</div><script>
+</div>
 
-let selectedOperator = "";
+</div>
 
+<script>
+let selectedOperator="";
 
-async function checkBalance() {
+async function signup(){
+const email=document.getElementById("signupEmail").value.trim();
+const password=document.getElementById("signupPassword").value;
+const result=document.getElementById("authResult");
 
-const email =
-document.getElementById("email").value.trim();
-
-if (!email) {
-document.getElementById("balanceResult").textContent =
-"Please enter your email.";
-return;
-}
-
-try {
-
-const response =
-await fetch("/api/balance?email=" +
-encodeURIComponent(email));
-
-const data = await response.json();
-
-if (!response.ok) {
-throw new Error(data.error || "Unable to check balance.");
-}
-
-document.getElementById("balanceResult").textContent =
-"Balance: GH₵" +
-Number(data.balance).toFixed(2);
-
-} catch(error) {
-
-document.getElementById("balanceResult").textContent =
-error.message;
-
-}
-
-}
-
-
-async function addBalance() {
-
-const email =
-document.getElementById("email").value.trim();
-
-const amount =
-document.getElementById("depositAmount").value;
-
-if (!email) {
-document.getElementById("paymentResult").textContent =
-"Please enter your email first.";
-return;
-}
-
-if (!amount || Number(amount) <= 0) {
-document.getElementById("paymentResult").textContent =
-"Please enter a valid amount.";
-return;
-}
-
-try {
-
-const response =
-await fetch("/api/paystack/initialize", {
-
-method: "POST",
-
-headers: {
-"Content-Type": "application/json"
-},
-
-body: JSON.stringify({
-email: email,
-amount: Number(amount)
-})
-
+try{
+const r=await fetch("/api/auth/signup",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({email,password})
 });
-
-const data = await response.json();
-
-if (!response.ok) {
-throw new Error(data.error || "Unable to start payment.");
+const d=await r.json();
+if(!r.ok)throw new Error(d.error||"Unable to sign up.");
+showDashboard(d.customer);
+}catch(e){result.textContent=e.message}
 }
 
-window.location.href =
-data.authorization_url;
+async function login(){
+const email=document.getElementById("loginEmail").value.trim();
+const password=document.getElementById("loginPassword").value;
+const result=document.getElementById("authResult");
 
-} catch(error) {
-
-document.getElementById("paymentResult").textContent =
-error.message;
-
-}
-
-}
-
-
-async function checkPrice() {
-
-const country =
-document.getElementById("country").value;
-
-const product =
-document.getElementById("product").value;
-
-const operatorList =
-document.getElementById("operatorList");
-
-const result =
-document.getElementById("priceResult");
-
-selectedOperator = "";
-
-if (!country || !product) {
-
-operatorList.textContent =
-"Please select a country and service.";
-
-return;
-
-}
-
-operatorList.textContent =
-"Loading operators...";
-
-result.textContent = "";
-
-try {
-
-const response =
-await fetch(
-"/api/price?country=" +
-encodeURIComponent(country) +
-"&product=" +
-encodeURIComponent(product)
-);
-
-const data =
-await response.json();
-
-if (!response.ok) {
-
-throw new Error(
-data.error ||
-data.message ||
-"Unable to check price."
-);
-
-}
-
-const productData =
-data[country] &&
-data[country][product];
-
-if (!productData) {
-
-operatorList.textContent =
-"No operators available.";
-
-return;
-
-}
-
-operatorList.innerHTML = "";
-
-const operators =
-Object.keys(productData);
-
-let available = 0;
-
-operators.forEach(function(operator) {
-
-const info =
-productData[operator];
-
-const count =
-Number(info.count);
-
-const price =
-Number(info.cost);
-
-const button =
-document.createElement("button");
-
-button.type = "button";
-
-button.className =
-"operator-button";
-
-button.textContent =
-operator +
-" — Price: " +
-info.cost +
-" | Available: " +
-info.count;
-
-if (!Number.isFinite(count) || count <= 0) {
-
-button.disabled = true;
-
-button.textContent +=
-" — Unavailable";
-
-} else {
-
-available++;
-
-button.onclick = function() {
-
-selectedOperator = operator;
-
-document.querySelectorAll(
-".operator-button"
-).forEach(function(btn) {
-btn.classList.remove("selected");
+try{
+const r=await fetch("/api/auth/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({email,password})
 });
+const d=await r.json();
+if(!r.ok)throw new Error(d.error||"Unable to sign in.");
+showDashboard(d.customer);
+}catch(e){result.textContent=e.message}
+}
 
+function showDashboard(customer){
+document.getElementById("auth").style.display="none";
+document.getElementById("dashboard").style.display="block";
+document.getElementById("accountEmail").textContent="Email: "+customer.email;
+document.getElementById("balance").textContent="Balance: GH₵"+Number(customer.balance).toFixed(2);
+}
+
+async function logout(){
+await fetch("/api/auth/logout",{method:"POST"});
+location.reload();
+}
+
+async function checkBalance(){
+try{
+const r=await fetch("/api/balance");
+const d=await r.json();
+if(!r.ok)throw new Error(d.error);
+document.getElementById("balance").textContent="Balance: GH₵"+Number(d.balance).toFixed(2);
+}catch(e){alert(e.message)}
+}
+
+async function addBalance(){
+const amount=Number(document.getElementById("depositAmount").value);
+const result=document.getElementById("paymentResult");
+
+if(!amount||amount<=0){
+result.textContent="Enter a valid amount.";
+return;
+}
+
+try{
+const r=await fetch("/api/paystack/initialize",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({amount})
+});
+const d=await r.json();
+if(!r.ok)throw new Error(d.error);
+location.href=d.authorization_url;
+}catch(e){result.textContent=e.message}
+}
+
+async function checkPrice(){
+const country=document.getElementById("country").value;
+const product=document.getElementById("product").value;
+const list=document.getElementById("operatorList");
+const result=document.getElementById("priceResult");
+
+selectedOperator="";
+
+if(!country||!product){
+list.textContent="Please select a country and service.";
+return;
+}
+
+list.textContent="Loading operators...";
+
+try{
+const r=await fetch("/api/price?country="+encodeURIComponent(country)+"&product="+encodeURIComponent(product));
+const d=await r.json();
+
+if(!r.ok)throw new Error(d.error||"Unable to check price.");
+
+const data=d[country]&&d[country][product];
+
+if(!data){
+list.textContent="No operators available.";
+return;
+}
+
+list.innerHTML="";
+
+Object.keys(data).forEach(operator=>{
+const info=data[operator];
+const count=Number(info.count);
+const price=Number(info.mtverifyPrice||info.cost);
+
+const button=document.createElement("button");
+button.className="operator-button";
+button.textContent=operator+" — Price: GH₵"+price.toFixed(2)+" | Available: "+info.count;
+
+if(!Number.isFinite(count)||count<=0){
+button.disabled=true;
+button.textContent+=" — Unavailable";
+}else{
+button.onclick=()=>{
+selectedOperator=operator;
+document.querySelectorAll(".operator-button").forEach(b=>b.classList.remove("selected"));
 button.classList.add("selected");
-
-result.textContent =
-"Selected operator: " +
-operator +
-"\nPrice: " +
-price +
-"\nAvailable: " +
-count;
-
+result.textContent="Selected: "+operator+" | GH₵"+price.toFixed(2);
 };
-
 }
 
-operatorList.appendChild(button);
+list.appendChild(button);
+});
+}catch(e){list.textContent=e.message}
+}
 
+async function rentNumber(){
+const country=document.getElementById("country").value;
+const product=document.getElementById("product").value;
+const result=document.getElementById("rentResult");
+
+if(!country||!product){
+result.textContent="Please select a country and service.";
+return;
+}
+
+if(!selectedOperator){
+result.textContent="Please select an available operator.";
+return;
+}
+
+result.textContent="Renting number...";
+
+try{
+const r=await fetch("/api/buy",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({country,product,operator:selectedOperator})
 });
 
+const d=await r.json();
 
-if (available === 0) {
+if(!r.ok)throw new Error(d.error||"Unable to rent number.");
 
-operatorList.textContent =
-"No numbers are currently available.";
+const order=d.order||d;
 
+result.textContent=
+"Number rented successfully!\n\n"+
+"Phone: "+(d.phone||order.phone||"Not provided")+
+"\nOrder ID: "+(d.id||order.id||"Not provided")+
+"\nPrice: GH₵"+Number(d.charged||0).toFixed(2)+
+"\nRemaining balance: GH₵"+Number(d.remainingBalance||0).toFixed(2);
+
+document.getElementById("orderId").value=d.id||order.id||"";
+checkBalance();
+
+}catch(e){result.textContent=e.message}
 }
 
-} catch(error) {
+async function checkSms(){
+const id=document.getElementById("orderId").value.trim();
+const result=document.getElementById("smsResult");
 
-operatorList.textContent =
-error.message;
-
-}
-
-}
-
-
-async function rentNumber() {
-
-const email =
-document.getElementById("email").value.trim();
-
-const country =
-document.getElementById("country").value;
-
-const product =
-document.getElementById("product").value;
-
-const result =
-document.getElementById("rentResult");
-
-if (!email) {
-
-result.textContent =
-"Please enter your email.";
-
+if(!id){
+result.textContent="Please enter an order ID.";
 return;
-
 }
 
-if (!country || !product) {
+result.textContent="Checking SMS...";
 
-result.textContent =
-"Please select a country and service.";
-
-return;
-
+try{
+const r=await fetch("/api/order/"+encodeURIComponent(id));
+const d=await r.json();
+if(!r.ok)throw new Error(d.error||"Unable to check SMS.");
+result.textContent=JSON.stringify(d,null,2);
+}catch(e){result.textContent=e.message}
 }
 
-if (!selectedOperator) {
+async function checkLogin(){
+try{
+const r=await fetch("/api/auth/me");
+const d=await r.json();
 
-result.textContent =
-"Please tap an available operator first.";
-
-return;
-
+if(d.authenticated){
+showDashboard(d.customer);
+}
+}catch(e){}
 }
 
-result.textContent =
-"Renting number...";
+checkLogin();
+</script>
 
-try {
-
-const response =
-await fetch("/api/buy", {
-
-method: "POST",
-
-headers: {
-"Content-Type": "application/json"
-},
-
-body: JSON.stringify({
-
-email: email,
-
-country: country,
-
-product: product,
-
-operator: selectedOperator
-
-})
-
-});
-
-const data =
-await response.json();
-
-if (!response.ok) {
-
-throw new Error(
-data.error ||
-"Unable to rent number."
-);
-
-}
-
-const order =
-data.order || {};
-
-result.textContent =
-"Number rented successfully!\n\n" +
-"Phone number: " +
-(order.phone || "Not provided") +
-"\nOrder ID: " +
-(order.id || "Not provided") +
-"\nPrice: GH₵" +
-Number(data.price || 0).toFixed(2) +
-"\nRemaining balance: GH₵" +
-Number(data.remainingBalance || 0).toFixed(2);
-
-if (order.id) {
-
-document.getElementById("orderId").value =
-order.id;
-
-}
-
-} catch(error) {
-
-result.textContent =
-error.message;
-
-}
-
-}
-
-
-async function checkSms() {
-
-const orderId =
-document.getElementById("orderId").value.trim();
-
-const result =
-document.getElementById("smsResult");
-
-if (!orderId) {
-
-result.textContent =
-"Please enter an order ID.";
-
-return;
-
-}
-
-result.textContent =
-"Checking SMS...";
-
-try {
-
-const response =
-await fetch(
-"/api/order/" +
-encodeURIComponent(orderId)
-);
-
-const data =
-await response.json();
-
-if (!response.ok) {
-
-throw new Error(
-data.error ||
-data.message ||
-"Unable to check SMS."
-);
-
-}
-
-result.textContent =
-JSON.stringify(data, null, 2);
-
-} catch(error) {
-
-result.textContent =
-error.message;
-
-}
-
-}
-
-</script></body>
+</body>
 </html>
