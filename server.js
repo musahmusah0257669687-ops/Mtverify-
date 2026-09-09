@@ -316,9 +316,7 @@ await pool.query(`
 `);
   console.log("Database tables are ready.");
 }
-}=======================================================
-   SESSION HELPERS
-========================================================= */
+   
 
 function hashSessionToken(token) {
   return crypto
