@@ -1121,9 +1121,48 @@ async function checkLogin(){
 
 }
 
+async function loadCountries(){
 
+  const country =
+    document.getElementById("country");
+
+  country.innerHTML =
+    '<option value="">Loading countries...</option>';
+
+  try{
+
+    const r =
+      await fetch("/api/catalog");
+
+    const data =
+      await r.json();
+
+    country.innerHTML =
+      '<option value="">Select country</option>';
+
+    Object.keys(data).forEach(code => {
+
+      const option =
+        document.createElement("option");
+
+      option.value = code;
+      option.textContent = code;
+
+      country.appendChild(option);
+
+    });
+
+  }catch(e){
+
+    country.innerHTML =
+      '<option value="">Unable to load countries</option>';
+
+  }
+
+  }
 /* START */
 
+loadCountries();
 checkLogin();
 
 </script>
