@@ -3,331 +3,1048 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MtVerify</title>
+<title>MtVerify — SMS Verification</title>
+
 <style>
-body{font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;background:#f5f5f5}
-.box{background:white;padding:20px;margin-bottom:15px;border-radius:12px}
-h1{text-align:center}
-input,select,button{width:100%;padding:12px;margin:7px 0;box-sizing:border-box;border-radius:8px;border:1px solid #ccc;font-size:16px}
-button{background:#111;color:white;border:none}
-.result{margin-top:10px;padding:12px;background:#eee;border-radius:8px;white-space:pre-wrap;word-break:break-word}
-.operator-button{background:white;color:#111;border:2px solid #ccc;text-align:left}
-.operator-button.selected{border:3px solid #111;background:#eee}
-.operator-button:disabled{background:#ddd;color:#777}
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f6f8;
+  color:#171717;
+}
+
+.container{
+  max-width:650px;
+  margin:auto;
+  padding:18px;
+}
+
+.header{
+  text-align:center;
+  padding:18px 0 10px;
+}
+
+.logo{
+  font-size:32px;
+  font-weight:800;
+}
+
+.subtitle{
+  color:#666;
+  margin-top:6px;
+}
+
+.box{
+  background:#fff;
+  padding:20px;
+  margin:15px 0;
+  border-radius:16px;
+  box-shadow:0 3px 15px rgba(0,0,0,.06);
+}
+
+h2{
+  margin-top:0;
+}
+
+h3{
+  margin-bottom:8px;
+}
+
+input,select,button{
+  width:100%;
+  padding:13px;
+  margin:7px 0;
+  border-radius:9px;
+  border:1px solid #d4d4d4;
+  font-size:16px;
+}
+
+input:focus,select:focus{
+  outline:none;
+  border-color:#111;
+}
+
+button{
+  background:#111;
+  color:white;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+button:disabled{
+  background:#ddd;
+  color:#777;
+  cursor:not-allowed;
+}
+
+.auth-title{
+  text-align:center;
+}
+
+.balance-card{
+  background:#111;
+  color:white;
+  padding:20px;
+  border-radius:15px;
+}
+
+.balance-label{
+  color:#bbb;
+  font-size:14px;
+}
+
+.balance-amount{
+  font-size:30px;
+  font-weight:bold;
+  margin:8px 0 15px;
+}
+
+.secondary{
+  background:#eee;
+  color:#111;
+}
+
+.danger{
+  background:#b42318;
+}
+
+.result{
+  margin-top:10px;
+  padding:13px;
+  background:#f1f3f5;
+  border-radius:9px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  min-height:20px;
+}
+
+.operator-button{
+  background:white;
+  color:#111;
+  border:2px solid #ddd;
+  text-align:left;
+}
+
+.operator-button.selected{
+  border:3px solid #111;
+  background:#f1f1f1;
+}
+
+.section-note{
+  color:#666;
+  font-size:14px;
+  line-height:1.5;
+}
+
+label{
+  display:block;
+  font-weight:bold;
+  margin-top:10px;
+}
+
+hr{
+  border:0;
+  border-top:1px solid #eee;
+  margin:22px 0;
+}
+
+.hidden{
+  display:none;
+}
+
+.footer{
+  text-align:center;
+  color:#777;
+  font-size:13px;
+  padding:25px 0;
+}
 </style>
 </head>
+
 <body>
 
-<h1>MtVerify</h1>
+<div class="container">
 
-<div id="auth" class="box">
-<h2>Welcome</h2>
+  <div class="header">
+    <div class="logo">MtVerify</div>
+    <div class="subtitle">Virtual numbers & SMS verification</div>
+  </div>
 
-<div id="signupBox">
-<h3>Create Account</h3>
-<input id="signupEmail" type="email" placeholder="Email">
-<input id="signupPassword" type="password" placeholder="Password (8+ characters)">
-<button onclick="signup()">Sign Up</button>
+
+  <!-- LOGIN / SIGNUP -->
+  <div id="auth" class="box">
+
+    <h2 class="auth-title">Welcome to MtVerify</h2>
+
+    <p class="section-note">
+      Create an account or sign in to rent virtual phone numbers
+      and receive verification SMS.
+    </p>
+
+    <div id="signupBox">
+
+      <h3>Create Account</h3>
+
+      <input
+        id="signupEmail"
+        type="email"
+        placeholder="Email address"
+        autocomplete="email"
+      >
+
+      <input
+        id="signupPassword"
+        type="password"
+        placeholder="Password (8+ characters)"
+        autocomplete="new-password"
+      >
+
+      <button onclick="signup()">Create Account</button>
+
+    </div>
+
+    <hr>
+
+    <div id="loginBox">
+
+      <h3>Already have an account?</h3>
+
+      <input
+        id="loginEmail"
+        type="email"
+        placeholder="Email address"
+        autocomplete="email"
+      >
+
+      <input
+        id="loginPassword"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+      <button onclick="login()">Sign In</button>
+
+    </div>
+
+    <div id="authResult" class="result"></div>
+
+  </div>
+
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+
+
+    <!-- ACCOUNT -->
+    <div class="box">
+
+      <div class="balance-card">
+
+        <div class="balance-label">Available Balance</div>
+
+        <div id="balance" class="balance-amount">
+          GH₵0.00
+        </div>
+
+        <div id="accountEmail"></div>
+
+      </div>
+
+      <button class="secondary" onclick="checkBalance()">
+        Refresh Balance
+      </button>
+
+      <button class="danger" onclick="logout()">
+        Sign Out
+      </button>
+
+    </div>
+
+
+    <!-- ADD BALANCE -->
+    <div class="box">
+
+      <h2>💳 Add Balance</h2>
+
+      <p class="section-note">
+        Add money to your MtVerify account to rent virtual numbers.
+      </p>
+
+      <input
+        id="depositAmount"
+        type="number"
+        min="1"
+        step="0.01"
+        placeholder="Amount in GH₵"
+      >
+
+      <button onclick="addBalance()">
+        Add Money with Paystack
+      </button>
+
+      <div id="paymentResult" class="result"></div>
+
+    </div>
+
+
+    <!-- RENT NUMBER -->
+    <div class="box">
+
+      <h2>📱 Rent a Number</h2>
+
+      <p class="section-note">
+        Select a country and service, then choose an available operator.
+      </p>
+
+      <label for="country">Country</label>
+
+      <select id="country">
+
+        <option value="">Select country</option>
+
+        <option value="ghana">Ghana</option>
+        <option value="nigeria">Nigeria</option>
+        <option value="usa">United States</option>
+        <option value="uk">United Kingdom</option>
+        <option value="canada">Canada</option>
+        <option value="india">India</option>
+        <option value="germany">Germany</option>
+        <option value="france">France</option>
+        <option value="italy">Italy</option>
+        <option value="spain">Spain</option>
+        <option value="netherlands">Netherlands</option>
+        <option value="australia">Australia</option>
+        <option value="poland">Poland</option>
+        <option value="romania">Romania</option>
+        <option value="indonesia">Indonesia</option>
+        <option value="philippines">Philippines</option>
+        <option value="vietnam">Vietnam</option>
+
+      </select>
+
+
+      <label for="product">Service</label>
+
+      <select id="product">
+
+        <option value="">Select service</option>
+
+        <option value="whatsapp">WhatsApp</option>
+        <option value="telegram">Telegram</option>
+        <option value="google">Google</option>
+        <option value="facebook">Facebook</option>
+        <option value="instagram">Instagram</option>
+        <option value="tiktok">TikTok</option>
+        <option value="twitter">Twitter</option>
+        <option value="microsoft">Microsoft</option>
+        <option value="discord">Discord</option>
+        <option value="uber">Uber</option>
+        <option value="amazon">Amazon</option>
+        <option value="snapchat">Snapchat</option>
+
+      </select>
+
+
+      <button onclick="checkPrice()">
+        Check Price & Operators
+      </button>
+
+
+      <div id="operatorList" class="result">
+        Select a country and service first.
+      </div>
+
+
+      <button onclick="rentNumber()">
+        Rent Number
+      </button>
+
+
+      <div id="priceResult" class="result"></div>
+
+      <div id="rentResult" class="result"></div>
+
+    </div>
+
+
+    <!-- SMS -->
+    <div class="box">
+
+      <h2>📨 Check SMS</h2>
+
+      <p class="section-note">
+        Enter the Order ID you received after renting a number.
+      </p>
+
+      <input
+        id="orderId"
+        type="text"
+        placeholder="Enter Order ID"
+      >
+
+      <button onclick="checkSms()">
+        Check for SMS
+      </button>
+
+      <div id="smsResult" class="result"></div>
+
+    </div>
+
+
+  </div>
+
+
+  <div class="footer">
+    MtVerify © 2026
+  </div>
+
 </div>
 
-<hr>
-
-<div id="loginBox">
-<h3>Sign In</h3>
-<input id="loginEmail" type="email" placeholder="Email">
-<input id="loginPassword" type="password" placeholder="Password">
-<button onclick="login()">Sign In</button>
-</div>
-
-<div id="authResult" class="result"></div>
-</div>
-
-<div id="dashboard" style="display:none">
-
-<div class="box">
-<h2>My Account</h2>
-<p id="accountEmail"></p>
-<p id="balance">Balance: GH₵0.00</p>
-<button onclick="checkBalance()">Refresh Balance</button>
-<button onclick="logout()">Sign Out</button>
-</div>
-
-<div class="box">
-<h2>Add Balance</h2>
-<input id="depositAmount" type="number" min="1" step="0.01" placeholder="Amount in GH₵">
-<button onclick="addBalance()">Pay with Paystack</button>
-<div id="paymentResult" class="result"></div>
-</div>
-
-<div class="box">
-<h2>Rent a Number</h2>
-
-<label>Country</label>
-<select id="country">
-<option value="">Select country</option>
-<option value="ghana">Ghana</option>
-<option value="nigeria">Nigeria</option>
-<option value="usa">United States</option>
-<option value="uk">United Kingdom</option>
-<option value="canada">Canada</option>
-<option value="india">India</option>
-<option value="germany">Germany</option>
-<option value="france">France</option>
-<option value="italy">Italy</option>
-<option value="spain">Spain</option>
-<option value="netherlands">Netherlands</option>
-<option value="australia">Australia</option>
-<option value="poland">Poland</option>
-<option value="romania">Romania</option>
-<option value="indonesia">Indonesia</option>
-<option value="philippines">Philippines</option>
-<option value="vietnam">Vietnam</option>
-</select>
-
-<label>Service</label>
-<select id="product">
-<option value="">Select service</option>
-<option value="whatsapp">WhatsApp</option>
-<option value="telegram">Telegram</option>
-<option value="google">Google</option>
-<option value="facebook">Facebook</option>
-<option value="instagram">Instagram</option>
-<option value="tiktok">TikTok</option>
-<option value="twitter">Twitter</option>
-<option value="microsoft">Microsoft</option>
-<option value="discord">Discord</option>
-<option value="uber">Uber</option>
-<option value="amazon">Amazon</option>
-<option value="snapchat">Snapchat</option>
-</select>
-
-<button onclick="checkPrice()">Check Price & Operators</button>
-
-<div id="operatorList" class="result">Please check price first.</div>
-
-<button onclick="rentNumber()">Rent Number</button>
-<div id="priceResult" class="result"></div>
-<div id="rentResult" class="result"></div>
-</div>
-
-<div class="box">
-<h2>Check SMS</h2>
-<input id="orderId" type="text" placeholder="Order ID">
-<button onclick="checkSms()">Check SMS</button>
-<div id="smsResult" class="result"></div>
-</div>
-
-</div>
 
 <script>
-let selectedOperator="";
+
+let selectedOperator = "";
+
+
+/* =========================
+   SIGN UP
+========================= */
 
 async function signup(){
-const email=document.getElementById("signupEmail").value.trim();
-const password=document.getElementById("signupPassword").value;
-const result=document.getElementById("authResult");
 
-try{
-const r=await fetch("/api/auth/signup",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({email,password})
-});
-const d=await r.json();
-if(!r.ok)throw new Error(d.error||"Unable to sign up.");
-showDashboard(d.customer);
-}catch(e){result.textContent=e.message}
+  const email =
+    document.getElementById("signupEmail").value.trim();
+
+  const password =
+    document.getElementById("signupPassword").value;
+
+  const result =
+    document.getElementById("authResult");
+
+  result.textContent = "Creating your account...";
+
+  if(!email || !password){
+
+    result.textContent =
+      "Please enter your email and password.";
+
+    return;
+  }
+
+  try{
+
+    const r = await fetch("/api/auth/signup",{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        email,
+        password
+      })
+
+    });
+
+    const d = await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to create your account."
+      );
+
+    }
+
+    showDashboard(d.customer);
+
+  }catch(e){
+
+    result.textContent = e.message;
+
+  }
+
 }
+
+
+/* =========================
+   LOGIN
+========================= */
 
 async function login(){
-const email=document.getElementById("loginEmail").value.trim();
-const password=document.getElementById("loginPassword").value;
-const result=document.getElementById("authResult");
 
-try{
-const r=await fetch("/api/auth/login",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({email,password})
-});
-const d=await r.json();
-if(!r.ok)throw new Error(d.error||"Unable to sign in.");
-showDashboard(d.customer);
-}catch(e){result.textContent=e.message}
+  const email =
+    document.getElementById("loginEmail").value.trim();
+
+  const password =
+    document.getElementById("loginPassword").value;
+
+  const result =
+    document.getElementById("authResult");
+
+  result.textContent = "Signing you in...";
+
+  if(!email || !password){
+
+    result.textContent =
+      "Please enter your email and password.";
+
+    return;
+  }
+
+  try{
+
+    const r = await fetch("/api/auth/login",{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        email,
+        password
+      })
+
+    });
+
+    const d = await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to sign in."
+      );
+
+    }
+
+    showDashboard(d.customer);
+
+  }catch(e){
+
+    result.textContent = e.message;
+
+  }
+
 }
+
+
+/* =========================
+   SHOW DASHBOARD
+========================= */
 
 function showDashboard(customer){
-document.getElementById("auth").style.display="none";
-document.getElementById("dashboard").style.display="block";
-document.getElementById("accountEmail").textContent="Email: "+customer.email;
-document.getElementById("balance").textContent="Balance: GH₵"+Number(customer.balance).toFixed(2);
+
+  document.getElementById("auth")
+    .style.display = "none";
+
+  document.getElementById("dashboard")
+    .style.display = "block";
+
+  document.getElementById("accountEmail")
+    .textContent = customer.email;
+
+  document.getElementById("balance")
+    .textContent =
+      "GH₵" +
+      Number(customer.balance).toFixed(2);
+
 }
+
+
+/* =========================
+   LOGOUT
+========================= */
 
 async function logout(){
-await fetch("/api/auth/logout",{method:"POST"});
-location.reload();
+
+  await fetch("/api/auth/logout",{
+    method:"POST"
+  });
+
+  location.reload();
+
 }
+
+
+/* =========================
+   BALANCE
+========================= */
 
 async function checkBalance(){
-try{
-const r=await fetch("/api/balance");
-const d=await r.json();
-if(!r.ok)throw new Error(d.error);
-document.getElementById("balance").textContent="Balance: GH₵"+Number(d.balance).toFixed(2);
-}catch(e){alert(e.message)}
+
+  try{
+
+    const r =
+      await fetch("/api/balance");
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to get balance."
+      );
+
+    }
+
+    document.getElementById("balance")
+      .textContent =
+        "GH₵" +
+        Number(d.balance).toFixed(2);
+
+  }catch(e){
+
+    alert(e.message);
+
+  }
+
 }
+
+
+/* =========================
+   ADD BALANCE
+========================= */
 
 async function addBalance(){
-const amount=Number(document.getElementById("depositAmount").value);
-const result=document.getElementById("paymentResult");
 
-if(!amount||amount<=0){
-result.textContent="Enter a valid amount.";
-return;
+  const amount =
+    Number(
+      document.getElementById("depositAmount").value
+    );
+
+  const result =
+    document.getElementById("paymentResult");
+
+  if(!amount || amount <= 0){
+
+    result.textContent =
+      "Enter a valid amount.";
+
+    return;
+  }
+
+  result.textContent =
+    "Opening Paystack...";
+
+  try{
+
+    const r =
+      await fetch("/api/paystack/initialize",{
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+          amount
+        })
+
+      });
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to start payment."
+      );
+
+    }
+
+    location.href =
+      d.authorization_url;
+
+  }catch(e){
+
+    result.textContent =
+      e.message;
+
+  }
+
 }
 
-try{
-const r=await fetch("/api/paystack/initialize",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({amount})
-});
-const d=await r.json();
-if(!r.ok)throw new Error(d.error);
-location.href=d.authorization_url;
-}catch(e){result.textContent=e.message}
-}
+
+/* =========================
+   CHECK PRICE
+========================= */
 
 async function checkPrice(){
-const country=document.getElementById("country").value;
-const product=document.getElementById("product").value;
-const list=document.getElementById("operatorList");
-const result=document.getElementById("priceResult");
 
-selectedOperator="";
+  const country =
+    document.getElementById("country").value;
 
-if(!country||!product){
-list.textContent="Please select a country and service.";
-return;
+  const product =
+    document.getElementById("product").value;
+
+  const list =
+    document.getElementById("operatorList");
+
+  const result =
+    document.getElementById("priceResult");
+
+  selectedOperator = "";
+
+  result.textContent = "";
+
+  if(!country || !product){
+
+    list.textContent =
+      "Please select a country and service.";
+
+    return;
+  }
+
+  list.textContent =
+    "Loading available operators...";
+
+  try{
+
+    const r =
+      await fetch(
+        "/api/price?country=" +
+        encodeURIComponent(country) +
+        "&product=" +
+        encodeURIComponent(product)
+      );
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to check price."
+      );
+
+    }
+
+    const data =
+      d[country] &&
+      d[country][product];
+
+    if(!data){
+
+      list.textContent =
+        "No operators available for this service.";
+
+      return;
+    }
+
+    list.innerHTML = "";
+
+    Object.keys(data).forEach(operator => {
+
+      const info = data[operator];
+
+      const count =
+        Number(info.count);
+
+      const price =
+        Number(
+          info.mtverifyPrice ||
+          info.cost
+        );
+
+      const button =
+        document.createElement("button");
+
+      button.className =
+        "operator-button";
+
+      button.textContent =
+        operator +
+        " — GH₵" +
+        price.toFixed(2) +
+        " | Available: " +
+        info.count;
+
+      if(
+        !Number.isFinite(count) ||
+        count <= 0
+      ){
+
+        button.disabled = true;
+
+        button.textContent +=
+          " — Unavailable";
+
+      }else{
+
+        button.onclick = () => {
+
+          selectedOperator =
+            operator;
+
+          document
+            .querySelectorAll(
+              ".operator-button"
+            )
+            .forEach(b =>
+              b.classList.remove("selected")
+            );
+
+          button.classList.add(
+            "selected"
+          );
+
+          result.textContent =
+            "Selected: " +
+            operator +
+            " | GH₵" +
+            price.toFixed(2);
+
+        };
+
+      }
+
+      list.appendChild(button);
+
+    });
+
+  }catch(e){
+
+    list.textContent =
+      e.message;
+
+  }
+
 }
 
-list.textContent="Loading operators...";
 
-try{
-const r=await fetch("/api/price?country="+encodeURIComponent(country)+"&product="+encodeURIComponent(product));
-const d=await r.json();
-
-if(!r.ok)throw new Error(d.error||"Unable to check price.");
-
-const data=d[country]&&d[country][product];
-
-if(!data){
-list.textContent="No operators available.";
-return;
-}
-
-list.innerHTML="";
-
-Object.keys(data).forEach(operator=>{
-const info=data[operator];
-const count=Number(info.count);
-const price=Number(info.mtverifyPrice||info.cost);
-
-const button=document.createElement("button");
-button.className="operator-button";
-button.textContent=operator+" — Price: GH₵"+price.toFixed(2)+" | Available: "+info.count;
-
-if(!Number.isFinite(count)||count<=0){
-button.disabled=true;
-button.textContent+=" — Unavailable";
-}else{
-button.onclick=()=>{
-selectedOperator=operator;
-document.querySelectorAll(".operator-button").forEach(b=>b.classList.remove("selected"));
-button.classList.add("selected");
-result.textContent="Selected: "+operator+" | GH₵"+price.toFixed(2);
-};
-}
-
-list.appendChild(button);
-});
-}catch(e){list.textContent=e.message}
-}
+/* =========================
+   RENT NUMBER
+========================= */
 
 async function rentNumber(){
-const country=document.getElementById("country").value;
-const product=document.getElementById("product").value;
-const result=document.getElementById("rentResult");
 
-if(!country||!product){
-result.textContent="Please select a country and service.";
-return;
+  const country =
+    document.getElementById("country").value;
+
+  const product =
+    document.getElementById("product").value;
+
+  const result =
+    document.getElementById("rentResult");
+
+  if(!country || !product){
+
+    result.textContent =
+      "Please select a country and service.";
+
+    return;
+  }
+
+  if(!selectedOperator){
+
+    result.textContent =
+      "Please select an available operator.";
+
+    return;
+  }
+
+  result.textContent =
+    "Renting number...";
+
+  try{
+
+    const r =
+      await fetch("/api/buy",{
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+          country,
+          product,
+          operator:selectedOperator
+
+        })
+
+      });
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to rent number."
+      );
+
+    }
+
+    const order =
+      d.order || d;
+
+    const orderId =
+      d.id ||
+      order.id ||
+      "Not provided";
+
+    const phone =
+      d.phone ||
+      order.phone ||
+      "Not provided";
+
+    const charged =
+      Number(
+        d.charged || 0
+      );
+
+    const remaining =
+      Number(
+        d.remainingBalance || 0
+      );
+
+    result.textContent =
+      "✅ Number rented successfully!\n\n" +
+      "Phone: " +
+      phone +
+      "\n\n" +
+      "Order ID: " +
+      orderId +
+      "\n\n" +
+      "Price: GH₵" +
+      charged.toFixed(2) +
+      "\n\n" +
+      "Remaining balance: GH₵" +
+      remaining.toFixed(2);
+
+    document.getElementById("orderId")
+      .value = orderId;
+
+    checkBalance();
+
+  }catch(e){
+
+    result.textContent =
+      e.message;
+
+  }
+
 }
 
-if(!selectedOperator){
-result.textContent="Please select an available operator.";
-return;
-}
 
-result.textContent="Renting number...";
-
-try{
-const r=await fetch("/api/buy",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({country,product,operator:selectedOperator})
-});
-
-const d=await r.json();
-
-if(!r.ok)throw new Error(d.error||"Unable to rent number.");
-
-const order=d.order||d;
-
-result.textContent=
-"Number rented successfully!\n\n"+
-"Phone: "+(d.phone||order.phone||"Not provided")+
-"\nOrder ID: "+(d.id||order.id||"Not provided")+
-"\nPrice: GH₵"+Number(d.charged||0).toFixed(2)+
-"\nRemaining balance: GH₵"+Number(d.remainingBalance||0).toFixed(2);
-
-document.getElementById("orderId").value=d.id||order.id||"";
-checkBalance();
-
-}catch(e){result.textContent=e.message}
-}
+/* =========================
+   CHECK SMS
+========================= */
 
 async function checkSms(){
-const id=document.getElementById("orderId").value.trim();
-const result=document.getElementById("smsResult");
 
-if(!id){
-result.textContent="Please enter an order ID.";
-return;
+  const id =
+    document.getElementById("orderId")
+      .value.trim();
+
+  const result =
+    document.getElementById("smsResult");
+
+  if(!id){
+
+    result.textContent =
+      "Please enter an Order ID.";
+
+    return;
+  }
+
+  result.textContent =
+    "Checking for SMS...";
+
+  try{
+
+    const r =
+      await fetch(
+        "/api/order/" +
+        encodeURIComponent(id)
+      );
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error ||
+        "Unable to check SMS."
+      );
+
+    }
+
+    result.textContent =
+      JSON.stringify(
+        d,
+        null,
+        2
+      );
+
+  }catch(e){
+
+    result.textContent =
+      e.message;
+
+  }
+
 }
 
-result.textContent="Checking SMS...";
 
-try{
-const r=await fetch("/api/order/"+encodeURIComponent(id));
-const d=await r.json();
-if(!r.ok)throw new Error(d.error||"Unable to check SMS.");
-result.textContent=JSON.stringify(d,null,2);
-}catch(e){result.textContent=e.message}
-}
+/* =========================
+   CHECK EXISTING LOGIN
+========================= */
 
 async function checkLogin(){
-try{
-const r=await fetch("/api/auth/me");
-const d=await r.json();
 
-if(d.authenticated){
-showDashboard(d.customer);
+  try{
+
+    const r =
+      await fetch("/api/auth/me");
+
+    const d =
+      await r.json();
+
+    if(d.authenticated){
+
+      showDashboard(
+        d.customer
+      );
+
+    }
+
+  }catch(e){
+
+    console.log(
+      "Login check failed"
+    );
+
+  }
+
 }
-}catch(e){}
-}
+
+
+/* START */
 
 checkLogin();
+
 </script>
 
 </body>
