@@ -203,7 +203,8 @@ function calculateCustomerPrice(fiveSimCost) {
 ========================================================= */
 
 
-/* =async function setupDatabase() {
+async function setupDatabase() {
+  // Create customers table if it does not exist yet
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id SERIAL PRIMARY KEY,
@@ -216,14 +217,9 @@ function calculateCustomerPrice(fiveSimCost) {
     )
   `);
 
-  /*
-    IMPORTANT:
-    Existing customers tables may have been created by
-    an older version of MtVerify. These commands safely
-    add the new columns without deleting existing
-    customers or balances.
-  */
-
+  // IMPORTANT:
+  // Add these columns to the OLD customers table if they
+  // were missing from the original database.
   await pool.query(`
     ALTER TABLE customers
     ADD COLUMN IF NOT EXISTS password_hash TEXT
@@ -240,6 +236,7 @@ function calculateCustomerPrice(fiveSimCost) {
     TIMESTAMPTZ NOT NULL DEFAULT NOW()
   `);
 
+  // Sessions
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sessions (
       id SERIAL PRIMARY KEY,
@@ -262,6 +259,7 @@ function calculateCustomerPrice(fiveSimCost) {
     ON sessions(expires_at)
   `);
 
+  // Payments
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
@@ -274,6 +272,7 @@ function calculateCustomerPrice(fiveSimCost) {
     )
   `);
 
+  // Orders
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id SERIAL PRIMARY KEY,
@@ -303,6 +302,7 @@ function calculateCustomerPrice(fiveSimCost) {
   `);
 
   console.log("Database tables are ready.");
+}
 }=======================================================
    SESSION HELPERS
 ========================================================= */
