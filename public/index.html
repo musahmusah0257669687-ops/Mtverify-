@@ -376,7 +376,24 @@ hr{
 
     </div>
 
+<!-- MY ORDERS -->
+<div class="box">
 
+  <h2>📋 My Orders</h2>
+
+  <p class="section-note">
+    View your previous number rentals and order details.
+  </p>
+
+  <button onclick="loadOrders()">
+    Refresh My Orders
+  </button>
+
+  <div id="ordersResult" class="result">
+    Your orders will appear here.
+  </div>
+
+  </div>
     <!-- SMS -->
     <div class="box">
 
@@ -469,7 +486,7 @@ async function signup(){
     }
 
     showDashboard(d.customer);
-
+loadOrders();
   }catch(e){
 
     result.textContent = e.message;
@@ -946,7 +963,92 @@ async function rentNumber(){
 
 }
 
+/* =========================
+   MY ORDERS
+========================= */
 
+async function loadOrders(){
+
+  const result =
+    document.getElementById("ordersResult");
+
+  result.textContent =
+    "Loading your orders...";
+
+  try{
+
+    const r =
+      await fetch("/api/orders");
+
+    const d =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        d.error || "Unable to load orders."
+      );
+
+    }
+
+    const orders =
+      Array.isArray(d) ?
+      d :
+      (d.orders || []);
+
+    if(orders.length === 0){
+
+      result.textContent =
+        "You have no orders yet.";
+
+      return;
+    }
+
+    result.innerHTML = "";
+
+    orders.forEach(order => {
+
+      const item =
+        document.createElement("div");
+
+      item.style.padding = "12px";
+      item.style.marginBottom = "10px";
+      item.style.background = "#fff";
+      item.style.border = "1px solid #ddd";
+      item.style.borderRadius = "9px";
+
+      item.textContent =
+        "Order ID: " +
+        (order.id || order.order_id || "N/A") +
+        "\nPhone: " +
+        (order.phone || "N/A") +
+        "\nCountry: " +
+        (order.country || "N/A") +
+        "\nService: " +
+        (order.product || "N/A") +
+        "\nPrice: GH₵" +
+        Number(order.charged || 0).toFixed(2) +
+        "\nStatus: " +
+        (order.status || "N/A") +
+        "\nDate: " +
+        (order.created_at ?
+          new Date(order.created_at).toLocaleString() :
+          "N/A");
+
+      item.style.whiteSpace = "pre-wrap";
+
+      result.appendChild(item);
+
+    });
+
+  }catch(e){
+
+    result.textContent =
+      e.message;
+
+  }
+
+}
 /* =========================
    CHECK SMS
 ========================= */
