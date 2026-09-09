@@ -1,642 +1,571 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MtVerify</title>  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #f5f5f5;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MtVerify</title><style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+  background: #f5f5f5;
+}
 
-    .box {
-      background: white;
-      padding: 20px;
-      margin-bottom: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+.box {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+}
 
-    h1 {
-      text-align: center;
-    }
+h1 {
+  text-align: center;
+}
 
-    label {
-      display: block;
-      margin-top: 12px;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
 
-    input,
-    select,
-    button {
-      width: 100%;
-      padding: 12px;
-      box-sizing: border-box;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
 
-    select {
-      background: white;
-      color: #111;
-    }
+button {
+  background: #111;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
 
-    button {
-      margin-top: 12px;
-      cursor: pointer;
-      background: #111;
-      color: white;
-      border: none;
-    }
+button:disabled {
+  opacity: 0.5;
+}
 
-    button:hover {
-      opacity: 0.9;
-    }
+.operator-list {
+  margin-top: 10px;
+}
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+.operator-button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 14px;
+  background: white;
+  color: #111;
+  border: 2px solid #ccc;
+  text-align: left;
+}
 
-    .result {
-      margin-top: 15px;
-      padding: 12px;
-      background: #f0f0f0;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+.operator-button.selected {
+  border: 3px solid #111;
+  background: #eee;
+}
 
-    .success {
-      background: #e8f7e8;
-    }
+.operator-button:disabled {
+  background: #ddd;
+  color: #777;
+  cursor: not-allowed;
+}
 
-    .error {
-      background: #ffe8e8;
-    }
-  </style></head><body>  <h1>MtVerify</h1>  <!-- CUSTOMER ACCOUNT -->  <div class="box">
-    <h2>Customer Account</h2><label for="email">Email</label>
-<input
-  id="email"
-  type="email"
-  placeholder="Enter your email"
-  autocomplete="email"
->
+.result {
+  margin-top: 15px;
+  padding: 12px;
+  background: #eee;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style></head><body><h1>MtVerify</h1><div class="box">
+<h2>Customer Account</h2><label>Email</label>
+<input id="email" type="email" placeholder="Enter your email">
 
 <button onclick="checkBalance()">Check Balance</button>
 
 <div id="balanceResult" class="result"></div>
-
-  </div>  <!-- ADD BALANCE -->  <div class="box">
-    <h2>Add Balance</h2><label for="depositAmount">Amount (GH₵)</label>
-<input
-  id="depositAmount"
-  type="number"
-  min="1"
-  step="0.01"
-  placeholder="Enter amount"
->
+</div><div class="box">
+<h2>Add Balance</h2><label>Amount (GH₵)</label>
+<input id="depositAmount" type="number" min="1" step="0.01" placeholder="Enter amount">
 
 <button onclick="addBalance()">Pay with Paystack</button>
 
 <div id="paymentResult" class="result"></div>
+</div><div class="box">
+<h2>Rent a Number</h2><label>Country</label>
 
-  </div>  <!-- RENT NUMBER -->  <div class="box">
-    <h2>Rent a Number</h2><label for="country">Country</label>
 <select id="country">
-  <option value="">Select country</option>
-  <option value="ghana">Ghana</option>
-  <option value="nigeria">Nigeria</option>
-  <option value="usa">United States</option>
-  <option value="uk">United Kingdom</option>
-  <option value="canada">Canada</option>
-  <option value="india">India</option>
-  <option value="germany">Germany</option>
-  <option value="france">France</option>
-  <option value="italy">Italy</option>
-  <option value="spain">Spain</option>
-  <option value="netherlands">Netherlands</option>
-  <option value="australia">Australia</option>
-  <option value="poland">Poland</option>
-  <option value="romania">Romania</option>
-  <option value="indonesia">Indonesia</option>
-  <option value="philippines">Philippines</option>
-  <option value="vietnam">Vietnam</option>
-</select>
+<option value="">Select country</option>
+<option value="ghana">Ghana</option>
+<option value="nigeria">Nigeria</option>
+<option value="usa">United States</option>
+<option value="uk">United Kingdom</option>
+<option value="canada">Canada</option>
+<option value="india">India</option>
+<option value="germany">Germany</option>
+<option value="france">France</option>
+<option value="italy">Italy</option>
+<option value="spain">Spain</option>
+<option value="netherlands">Netherlands</option>
+<option value="australia">Australia</option>
+<option value="poland">Poland</option>
+<option value="romania">Romania</option>
+<option value="indonesia">Indonesia</option>
+<option value="philippines">Philippines</option>
+<option value="vietnam">Vietnam</option>
+</select><label>Service</label>
 
-<label for="product">Service</label>
 <select id="product">
-  <option value="">Select service</option>
-  <option value="whatsapp">WhatsApp</option>
-  <option value="telegram">Telegram</option>
-  <option value="google">Google</option>
-  <option value="facebook">Facebook</option>
-  <option value="instagram">Instagram</option>
-  <option value="tiktok">TikTok</option>
-  <option value="twitter">Twitter</option>
-  <option value="microsoft">Microsoft</option>
-  <option value="discord">Discord</option>
-  <option value="uber">Uber</option>
-  <option value="amazon">Amazon</option>
-  <option value="snapchat">Snapchat</option>
-</select>
+<option value="">Select service</option>
+<option value="whatsapp">WhatsApp</option>
+<option value="telegram">Telegram</option>
+<option value="google">Google</option>
+<option value="facebook">Facebook</option>
+<option value="instagram">Instagram</option>
+<option value="tiktok">TikTok</option>
+<option value="twitter">Twitter</option>
+<option value="microsoft">Microsoft</option>
+<option value="discord">Discord</option>
+<option value="uber">Uber</option>
+<option value="amazon">Amazon</option>
+<option value="snapchat">Snapchat</option>
+</select><button onclick="checkPrice()">Check Price & Operators</button>
 
-<label for="operator">Operator</label>
-<select id="operator">
-  <option value="">Check price first</option>
-</select>
+<h3>Choose Operator</h3><div id="operatorList" class="operator-list">
+Please check price first.
+</div><button onclick="rentNumber()">Rent Number</button>
 
-<button onclick="checkPrice()">Check Price & Operators</button>
+<div id="priceResult" class="result"></div><div id="rentResult" class="result"></div></div><div class="box">
+<h2>Check SMS</h2><label>Order ID</label>
 
-<button onclick="rentNumber()">Rent Number</button>
-
-<div id="priceResult" class="result"></div>
-<div id="rentResult" class="result"></div>
-
-  </div>  <!-- CHECK SMS -->  <div class="box">
-    <h2>Check SMS</h2><label for="orderId">Order ID</label>
-<input
-  id="orderId"
-  type="text"
-  placeholder="Enter order ID"
->
-
-<button onclick="checkSms()">Check SMS</button>
+<input id="orderId" type="text" placeholder="Enter order ID"><button onclick="checkSms()">Check SMS</button>
 
 <div id="smsResult" class="result"></div>
+</div><script>
 
-  </div><script>
+let selectedOperator = "";
+
 
 async function checkBalance() {
-  const email =
-    document.getElementById("email").value.trim();
 
-  const result =
-    document.getElementById("balanceResult");
+const email =
+document.getElementById("email").value.trim();
 
-  if (!email) {
-    result.textContent =
-      "Please enter your email.";
-    result.className = "result error";
-    return;
-  }
+if (!email) {
+document.getElementById("balanceResult").textContent =
+"Please enter your email.";
+return;
+}
 
-  result.textContent = "Checking balance...";
+try {
 
-  try {
-    const response = await fetch(
-      "/api/balance?email=" +
-      encodeURIComponent(email)
-    );
+const response =
+await fetch("/api/balance?email=" +
+encodeURIComponent(email));
 
-    const data = await response.json();
+const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Unable to check balance."
-      );
-    }
+if (!response.ok) {
+throw new Error(data.error || "Unable to check balance.");
+}
 
-    result.textContent =
-      "Balance: GH₵" +
-      Number(data.balance).toFixed(2);
+document.getElementById("balanceResult").textContent =
+"Balance: GH₵" +
+Number(data.balance).toFixed(2);
 
-    result.className = "result success";
+} catch(error) {
 
-  } catch (error) {
-    result.textContent = error.message;
-    result.className = "result error";
-  }
+document.getElementById("balanceResult").textContent =
+error.message;
+
+}
+
 }
 
 
 async function addBalance() {
-  const email =
-    document.getElementById("email").value.trim();
 
-  const amount =
-    document.getElementById("depositAmount").value;
+const email =
+document.getElementById("email").value.trim();
 
-  const result =
-    document.getElementById("paymentResult");
+const amount =
+document.getElementById("depositAmount").value;
 
-  if (!email) {
-    result.textContent =
-      "Please enter your email first.";
-    result.className = "result error";
-    return;
-  }
+if (!email) {
+document.getElementById("paymentResult").textContent =
+"Please enter your email first.";
+return;
+}
 
-  if (!amount || Number(amount) <= 0) {
-    result.textContent =
-      "Please enter a valid amount.";
-    result.className = "result error";
-    return;
-  }
+if (!amount || Number(amount) <= 0) {
+document.getElementById("paymentResult").textContent =
+"Please enter a valid amount.";
+return;
+}
 
-  result.textContent =
-    "Starting Paystack payment...";
+try {
 
-  try {
-    const response =
-      await fetch("/api/paystack/initialize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: email,
-          amount: Number(amount)
-        })
-      });
+const response =
+await fetch("/api/paystack/initialize", {
 
-    const data =
-      await response.json();
+method: "POST",
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Unable to start payment."
-      );
-    }
+headers: {
+"Content-Type": "application/json"
+},
 
-    window.location.href =
-      data.authorization_url;
+body: JSON.stringify({
+email: email,
+amount: Number(amount)
+})
 
-  } catch (error) {
-    result.textContent =
-      error.message;
-    result.className =
-      "result error";
-  }
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+throw new Error(data.error || "Unable to start payment.");
+}
+
+window.location.href =
+data.authorization_url;
+
+} catch(error) {
+
+document.getElementById("paymentResult").textContent =
+error.message;
+
+}
+
 }
 
 
-/*
-  CHECK PRICE AND LOAD OPERATORS
-*/
 async function checkPrice() {
 
-  const country =
-    document.getElementById("country").value;
+const country =
+document.getElementById("country").value;
 
-  const product =
-    document.getElementById("product").value;
+const product =
+document.getElementById("product").value;
 
-  const operatorSelect =
-    document.getElementById("operator");
+const operatorList =
+document.getElementById("operatorList");
 
-  const result =
-    document.getElementById("priceResult");
+const result =
+document.getElementById("priceResult");
 
-  if (!country || !product) {
-    result.textContent =
-      "Please select a country and service.";
+selectedOperator = "";
 
-    result.className =
-      "result error";
+if (!country || !product) {
 
-    return;
-  }
+operatorList.textContent =
+"Please select a country and service.";
 
-  result.textContent =
-    "Checking current price...";
+return;
 
-  operatorSelect.innerHTML =
-    '<option value="">Loading operators...</option>';
+}
 
-  operatorSelect.disabled = true;
+operatorList.textContent =
+"Loading operators...";
 
-  try {
+result.textContent = "";
 
-    const response =
-      await fetch(
-        "/api/price?country=" +
-        encodeURIComponent(country) +
-        "&product=" +
-        encodeURIComponent(product)
-      );
+try {
 
-    const data =
-      await response.json();
+const response =
+await fetch(
+"/api/price?country=" +
+encodeURIComponent(country) +
+"&product=" +
+encodeURIComponent(product)
+);
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        "Unable to check price."
-      );
-    }
+const data =
+await response.json();
 
-    const productData =
-      data[country] &&
-      data[country][product];
+if (!response.ok) {
 
-    if (!productData) {
+throw new Error(
+data.error ||
+data.message ||
+"Unable to check price."
+);
 
-      operatorSelect.innerHTML =
-        '<option value="">No operators available</option>';
+}
 
-      result.textContent =
-        "No operators are currently available for this selection.";
+const productData =
+data[country] &&
+data[country][product];
 
-      result.className =
-        "result error";
+if (!productData) {
 
-      operatorSelect.disabled = true;
+operatorList.textContent =
+"No operators available.";
 
-      return;
-    }
+return;
 
-    operatorSelect.innerHTML =
-      '<option value="">Select an operator</option>';
+}
 
-    const operators =
-      Object.keys(productData);
+operatorList.innerHTML = "";
 
-    let availableCount = 0;
+const operators =
+Object.keys(productData);
 
-    let text =
-      "Available operators:\n\n";
+let available = 0;
 
-    operators.forEach(function(operator) {
+operators.forEach(function(operator) {
 
-      const info =
-        productData[operator];
+const info =
+productData[operator];
 
-      const cost =
-        Number(info.cost);
+const count =
+Number(info.count);
 
-      const count =
-        Number(info.count);
+const price =
+Number(info.cost);
 
-      const option =
-        document.createElement("option");
+const button =
+document.createElement("button");
 
-      option.value =
-        operator;
+button.type = "button";
 
-      option.textContent =
-        operator +
-        " — Price: " +
-        (Number.isFinite(cost)
-          ? cost
-          : info.cost) +
-        " | Available: " +
-        (Number.isFinite(count)
-          ? count
-          : info.count);
+button.className =
+"operator-button";
 
-      /*
-        Operators with zero availability
-        cannot be selected.
-      */
-      if (
-        !Number.isFinite(count) ||
-        count <= 0
-      ) {
-        option.disabled = true;
-        option.textContent +=
-          " — Unavailable";
-      } else {
-        availableCount++;
+button.textContent =
+operator +
+" — Price: " +
+info.cost +
+" | Available: " +
+info.count;
 
-        text +=
-          operator +
-          " — Price: " +
-          (Number.isFinite(cost)
-            ? cost
-            : info.cost) +
-          " | Available: " +
-          count +
-          "\n";
-      }
+if (!Number.isFinite(count) || count <= 0) {
 
-      operatorSelect.appendChild(option);
-    });
+button.disabled = true;
 
-    operatorSelect.disabled =
-      availableCount === 0;
+button.textContent +=
+" — Unavailable";
 
-    if (availableCount === 0) {
+} else {
 
-      operatorSelect.innerHTML =
-        '<option value="">No numbers available</option>';
+available++;
 
-      result.textContent =
-        "No numbers are currently available.";
+button.onclick = function() {
 
-      result.className =
-        "result error";
+selectedOperator = operator;
 
-      return;
-    }
+document.querySelectorAll(
+".operator-button"
+).forEach(function(btn) {
+btn.classList.remove("selected");
+});
 
-    text +=
-      "\nSelect an available operator above.";
+button.classList.add("selected");
 
-    result.textContent = text;
+result.textContent =
+"Selected operator: " +
+operator +
+"\nPrice: " +
+price +
+"\nAvailable: " +
+count;
 
-    result.className =
-      "result success";
+};
 
-  } catch (error) {
+}
 
-    operatorSelect.innerHTML =
-      '<option value="">Unable to load operators</option>';
+operatorList.appendChild(button);
 
-    operatorSelect.disabled = true;
+});
 
-    result.textContent =
-      error.message;
 
-    result.className =
-      "result error";
-  }
+if (available === 0) {
+
+operatorList.textContent =
+"No numbers are currently available.";
+
+}
+
+} catch(error) {
+
+operatorList.textContent =
+error.message;
+
+}
+
 }
 
 
-/*
-  RENT NUMBER
-*/
 async function rentNumber() {
 
-  const email =
-    document.getElementById("email").value.trim();
+const email =
+document.getElementById("email").value.trim();
 
-  const country =
-    document.getElementById("country").value;
+const country =
+document.getElementById("country").value;
 
-  const product =
-    document.getElementById("product").value;
+const product =
+document.getElementById("product").value;
 
-  const operator =
-    document.getElementById("operator").value;
+const result =
+document.getElementById("rentResult");
 
-  const result =
-    document.getElementById("rentResult");
+if (!email) {
 
-  if (!email) {
-    result.textContent =
-      "Please enter your email.";
+result.textContent =
+"Please enter your email.";
 
-    result.className =
-      "result error";
+return;
 
-    return;
-  }
+}
 
-  if (!country || !product) {
-    result.textContent =
-      "Please select a country and service.";
+if (!country || !product) {
 
-    result.className =
-      "result error";
+result.textContent =
+"Please select a country and service.";
 
-    return;
-  }
+return;
 
-  if (!operator) {
-    result.textContent =
-      "Please select an available operator.";
+}
 
-    result.className =
-      "result error";
+if (!selectedOperator) {
 
-    return;
-  }
+result.textContent =
+"Please tap an available operator first.";
 
-  result.textContent =
-    "Renting number...";
+return;
 
-  try {
+}
 
-    const response =
-      await fetch("/api/buy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: email,
-          country: country,
-          product: product,
-          operator: operator
-        })
-      });
+result.textContent =
+"Renting number...";
 
-    const data =
-      await response.json();
+try {
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Unable to rent number."
-      );
-    }
+const response =
+await fetch("/api/buy", {
 
-    const order =
-      data.order || {};
+method: "POST",
 
-    result.textContent =
-      "Number rented successfully!\n\n" +
-      "Phone number: " +
-      (order.phone || "Not provided") +
-      "\nOrder ID: " +
-      (order.id || "Not provided") +
-      "\nPrice: GH₵" +
-      Number(data.price || 0).toFixed(2) +
-      "\nRemaining balance: GH₵" +
-      Number(
-        data.remainingBalance || 0
-      ).toFixed(2);
+headers: {
+"Content-Type": "application/json"
+},
 
-    result.className =
-      "result success";
+body: JSON.stringify({
 
-    if (order.id) {
-      document.getElementById("orderId").value =
-        order.id;
-    }
+email: email,
 
-  } catch (error) {
+country: country,
 
-    result.textContent =
-      error.message;
+product: product,
 
-    result.className =
-      "result error";
-  }
+operator: selectedOperator
+
+})
+
+});
+
+const data =
+await response.json();
+
+if (!response.ok) {
+
+throw new Error(
+data.error ||
+"Unable to rent number."
+);
+
+}
+
+const order =
+data.order || {};
+
+result.textContent =
+"Number rented successfully!\n\n" +
+"Phone number: " +
+(order.phone || "Not provided") +
+"\nOrder ID: " +
+(order.id || "Not provided") +
+"\nPrice: GH₵" +
+Number(data.price || 0).toFixed(2) +
+"\nRemaining balance: GH₵" +
+Number(data.remainingBalance || 0).toFixed(2);
+
+if (order.id) {
+
+document.getElementById("orderId").value =
+order.id;
+
+}
+
+} catch(error) {
+
+result.textContent =
+error.message;
+
+}
+
 }
 
 
-/*
-  CHECK SMS
-*/
 async function checkSms() {
 
-  const orderId =
-    document.getElementById("orderId").value.trim();
+const orderId =
+document.getElementById("orderId").value.trim();
 
-  const result =
-    document.getElementById("smsResult");
+const result =
+document.getElementById("smsResult");
 
-  if (!orderId) {
-    result.textContent =
-      "Please enter an order ID.";
+if (!orderId) {
 
-    result.className =
-      "result error";
+result.textContent =
+"Please enter an order ID.";
 
-    return;
-  }
+return;
 
-  result.textContent =
-    "Checking SMS...";
+}
 
-  try {
+result.textContent =
+"Checking SMS...";
 
-    const response =
-      await fetch(
-        "/api/order/" +
-        encodeURIComponent(orderId)
-      );
+try {
 
-    const data =
-      await response.json();
+const response =
+await fetch(
+"/api/order/" +
+encodeURIComponent(orderId)
+);
 
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        "Unable to check SMS."
-      );
-    }
+const data =
+await response.json();
 
-    result.textContent =
-      JSON.stringify(
-        data,
-        null,
-        2
-      );
+if (!response.ok) {
 
-    result.className =
-      "result success";
+throw new Error(
+data.error ||
+data.message ||
+"Unable to check SMS."
+);
 
-  } catch (error) {
+}
 
-    result.textContent =
-      error.message;
+result.textContent =
+JSON.stringify(data, null, 2);
 
-    result.className =
-      "result error";
-  }
+} catch(error) {
+
+result.textContent =
+error.message;
+
+}
+
 }
 
 </script></body>
