@@ -202,7 +202,8 @@ function calculateCustomerPrice(fiveSimCost) {
    DATABASE SETUP
 ========================================================= */
 
-async function setupDatabase() {
+
+/* =async function setupDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id SERIAL PRIMARY KEY,
@@ -216,11 +217,28 @@ async function setupDatabase() {
   `);
 
   /*
-    Existing customers from the older version may not have
-    passwords. They can still exist in the database, but
-    they must create/login with an account before using
-    the protected dashboard.
+    IMPORTANT:
+    Existing customers tables may have been created by
+    an older version of MtVerify. These commands safely
+    add the new columns without deleting existing
+    customers or balances.
   */
+
+  await pool.query(`
+    ALTER TABLE customers
+    ADD COLUMN IF NOT EXISTS password_hash TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE customers
+    ADD COLUMN IF NOT EXISTS password_salt TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE customers
+    ADD COLUMN IF NOT EXISTS updated_at
+    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sessions (
@@ -285,9 +303,7 @@ async function setupDatabase() {
   `);
 
   console.log("Database tables are ready.");
-}
-
-/* =========================================================
+}=======================================================
    SESSION HELPERS
 ========================================================= */
 
