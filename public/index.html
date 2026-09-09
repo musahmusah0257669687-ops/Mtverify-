@@ -102,6 +102,12 @@
       display: none;
     }
 
+    .note {
+      color: #666;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
     footer {
       text-align: center;
       color: #777;
@@ -185,47 +191,190 @@
       Country
     </label>
 
-    <input
-      id="country"
-      type="text"
-      placeholder="Example: england"
-    >
+    <select id="country">
+      <option value="">
+        Select country
+      </option>
+
+      <option value="england">
+        🇬🇧 England
+      </option>
+
+      <option value="usa">
+        🇺🇸 United States
+      </option>
+
+      <option value="canada">
+        🇨🇦 Canada
+      </option>
+
+      <option value="germany">
+        🇩🇪 Germany
+      </option>
+
+      <option value="france">
+        🇫🇷 France
+      </option>
+
+      <option value="italy">
+        🇮🇹 Italy
+      </option>
+
+      <option value="spain">
+        🇪🇸 Spain
+      </option>
+
+      <option value="netherlands">
+        🇳🇱 Netherlands
+      </option>
+
+      <option value="poland">
+        🇵🇱 Poland
+      </option>
+
+      <option value="romania">
+        🇷🇴 Romania
+      </option>
+
+      <option value="australia">
+        🇦🇺 Australia
+      </option>
+
+      <option value="india">
+        🇮🇳 India
+      </option>
+
+      <option value="indonesia">
+        🇮🇩 Indonesia
+      </option>
+
+      <option value="brazil">
+        🇧🇷 Brazil
+      </option>
+
+      <option value="mexico">
+        🇲🇽 Mexico
+      </option>
+
+      <option value="southafrica">
+        🇿🇦 South Africa
+      </option>
+
+      <option value="ghana">
+        🇬🇭 Ghana
+      </option>
+    </select>
+
 
     <label for="service">
       Service
     </label>
 
-    <input
-      id="service"
-      type="text"
-      placeholder="Example: telegram"
-    >
+    <select id="service">
+
+      <option value="">
+        Select service
+      </option>
+
+      <option value="telegram">
+        Telegram
+      </option>
+
+      <option value="whatsapp">
+        WhatsApp
+      </option>
+
+      <option value="google">
+        Google
+      </option>
+
+      <option value="facebook">
+        Facebook
+      </option>
+
+      <option value="instagram">
+        Instagram
+      </option>
+
+      <option value="tiktok">
+        TikTok
+      </option>
+
+      <option value="twitter">
+        X / Twitter
+      </option>
+
+      <option value="microsoft">
+        Microsoft
+      </option>
+
+      <option value="discord">
+        Discord
+      </option>
+
+      <option value="amazon">
+        Amazon
+      </option>
+
+      <option value="uber">
+        Uber
+      </option>
+
+      <option value="airbnb">
+        Airbnb
+      </option>
+
+      <option value="binance">
+        Binance
+      </option>
+
+      <option value="snapchat">
+        Snapchat
+      </option>
+
+      <option value="other">
+        Other
+      </option>
+
+    </select>
+
+    <div class="note">
+      Select a country and service, then check availability.
+    </div>
+
 
     <button id="priceButton">
       Check Price & Operators
     </button>
+
 
     <label for="operator">
       Choose Operator
     </label>
 
     <select id="operator" disabled>
+
       <option value="">
         Check price first
       </option>
+
     </select>
 
+
     <div id="priceResult" class="result price">
-      Enter country and service, then check the price.
+      Select country and service, then check the price.
     </div>
+
 
     <button id="rentButton" disabled>
       Rent Number
     </button>
 
+
     <div id="result" class="result">
       Ready.
     </div>
+
 
     <div id="orderSection" class="hidden">
 
@@ -420,7 +569,6 @@ payButton.addEventListener("click", async () => {
 
     }
 
-    // Save payment reference
     localStorage.setItem(
       "mtverify_reference",
       data.reference
@@ -431,7 +579,6 @@ payButton.addEventListener("click", async () => {
       email
     );
 
-    // Send customer to Paystack
     window.location.href =
       data.authorization_url;
 
@@ -491,6 +638,7 @@ async function verifyReturnedPayment() {
 
     if (
       savedEmail &&
+      data.email &&
       data.email.toLowerCase() ===
       savedEmail.toLowerCase()
     ) {
@@ -542,7 +690,7 @@ priceButton.addEventListener("click", async () => {
   if (!country || !product) {
 
     priceResult.textContent =
-      "Please enter country and service.";
+      "Please select country and service.";
 
     return;
   }
@@ -584,7 +732,7 @@ priceButton.addEventListener("click", async () => {
     if (!productData) {
 
       priceResult.textContent =
-        "No operators are available.";
+        "No operators are available for this selection.";
 
       operatorSelect.innerHTML =
         '<option value="">No operators</option>';
@@ -610,7 +758,7 @@ priceButton.addEventListener("click", async () => {
           operator;
 
         option.textContent =
-          `${operator} — Price: ${info.cost} — Available: ${info.count}`;
+          `${operator} — ${info.cost} — ${info.count} available`;
 
         operatorSelect.appendChild(option);
 
@@ -662,7 +810,7 @@ function updateSelectedPrice() {
 
   let text =
     `Selected operator: ${operator}\n` +
-    `Price: ${info.cost}\n` +
+    `5SIM price: ${info.cost}\n` +
     `Available: ${info.count}`;
 
   if (info.rate !== undefined) {
@@ -705,6 +853,14 @@ rentButton.addEventListener(
 
       result.textContent =
         "Enter your email address first.";
+
+      return;
+    }
+
+    if (!country || !product) {
+
+      result.textContent =
+        "Please select country and service.";
 
       return;
     }
@@ -765,18 +921,58 @@ rentButton.addEventListener(
 
       }
 
+      const order =
+        data.order || data;
+
       orderId =
-        data.id;
+        order.id;
+
+      const phone =
+        order.phone ||
+        order.number ||
+        "Not provided";
+
+      const charged =
+        Number(data.price || data.charged || 0);
 
       result.textContent =
         `Operator: ${operator}\n` +
-        `Number: ${data.phone || "Not provided"}\n` +
-        `Order ID: ${data.id}\n` +
-        `Charged: ${data.charged}\n` +
-        `Remaining balance: GH₵${Number(data.remainingBalance).toFixed(2)}`;
+        `Number: ${phone}\n` +
+        `Order ID: ${order.id}\n` +
+        `Charged: GH₵${charged.toFixed(2)}`;
 
-      balanceDisplay.textContent =
-        Number(data.remainingBalance).toFixed(2);
+      if (
+        data.remainingBalance !== undefined
+      ) {
+
+        result.textContent +=
+          `\nRemaining balance: GH₵${Number(data.remainingBalance).toFixed(2)}`;
+
+        balanceDisplay.textContent =
+          Number(data.remainingBalance).toFixed(2);
+
+      } else {
+
+        // Refresh balance from the server
+        const balanceResponse =
+          await fetch(
+            `/api/balance?email=${encodeURIComponent(email)}`
+          );
+
+        const balanceData =
+          await balanceResponse.json();
+
+        if (balanceResponse.ok) {
+
+          balanceDisplay.textContent =
+            Number(balanceData.balance).toFixed(2);
+
+          result.textContent +=
+            `\nRemaining balance: GH₵${Number(balanceData.balance).toFixed(2)}`;
+
+        }
+
+      }
 
       orderSection.classList.remove(
         "hidden"
@@ -875,7 +1071,11 @@ checkButton.addEventListener(
 );
 
 
-// Check whether we returned from Paystack
+// ===============================
+// CHECK WHETHER WE RETURNED
+// FROM PAYSTACK
+// ===============================
+
 verifyReturnedPayment();
 
 </script>
