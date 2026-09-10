@@ -638,8 +638,9 @@ async function addBalance(){
         },
 
         body:JSON.stringify({
-          amount
-        })
+  amount,
+  callback_url: window.location.origin
+})
 
       });
 
