@@ -1219,7 +1219,32 @@ document.getElementById("country")
   .addEventListener("change", loadServices);
 
 checkLogin();
+const paymentReference =
+  new URLSearchParams(window.location.search)
+    .get("reference");
 
+if (paymentReference) {
+  fetch(
+    "/api/paystack/verify/" +
+    encodeURIComponent(paymentReference)
+  )
+    .then(r => r.json())
+    .then(data => {
+      if (data.balance !== undefined) {
+        alert(
+          "Payment successful! New balance: GH₵" +
+          Number(data.balance).toFixed(2)
+        );
+
+        checkLogin();
+      } else if (data.error) {
+        alert(data.error);
+      }
+    })
+        .catch(() => {
+      alert("Unable to verify payment.");
+    });
+}
 </script>
 
 </body>
