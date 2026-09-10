@@ -1191,7 +1191,16 @@ async function loadCountries(){
       product.appendChild(option);
 
 });
+const search = document.getElementById("serviceSearch");
 
+search.oninput = function(){
+  const text = this.value.toLowerCase().trim();
+
+  Array.from(product.options).forEach(option => {
+    option.hidden =
+      text && !option.textContent.toLowerCase().startsWith(text);
+  });
+};
 }catch(e){
 
 
