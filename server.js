@@ -1100,8 +1100,11 @@ app.post(
                   amountInPesewas
                 ),
               currency: "GHS",
-              reference,
-              metadata: {
+reference,
+callback_url:
+  req.body.callback_url ||
+  "https://mtverify-2.onrender.com/",
+metadata: {
                 service:
                   "MtVerify",
                 customer_email:
