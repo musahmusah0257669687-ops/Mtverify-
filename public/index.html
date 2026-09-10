@@ -1190,27 +1190,10 @@ async function loadCountries(){
 
       product.appendChild(option);
 
-    });
-const search =
-  document.getElementById("serviceSearch");
+});
 
-search.oninput = function(){
+}catch(e){
 
-  const text =
-    this.value.toLowerCase();
-
-  Array.from(product.options).forEach(option => {
-
-    option.hidden =
-      option.value &&
-      !option.textContent
-        .toLowerCase()
-        .includes(text);
-
-  });
-
-};
-  }catch(e){
 
     product.innerHTML =
       '<option value="">Unable to load services</option>';
