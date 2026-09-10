@@ -1145,9 +1145,64 @@ async function loadCountries(){
   }
 
   }
+  async function loadServices(){
+
+  const country =
+    document.getElementById("country").value;
+
+  const product =
+    document.getElementById("product");
+
+  product.innerHTML =
+    '<option value="">Loading services...</option>';
+
+  if(!country){
+    product.innerHTML =
+      '<option value="">Select service</option>';
+    return;
+  }
+
+  try{
+
+    const r =
+      await fetch(
+        "/api/catalog?country=" +
+        encodeURIComponent(country)
+      );
+
+    const data =
+      await r.json();
+
+    product.innerHTML =
+      '<option value="">Select service</option>';
+
+    Object.keys(data[country] || {}).forEach(service => {
+
+      const option =
+        document.createElement("option");
+
+      option.value = service;
+      option.textContent = service;
+
+      product.appendChild(option);
+
+    });
+
+  }catch(e){
+
+    product.innerHTML =
+      '<option value="">Unable to load services</option>';
+
+  }
+
+}
 /* START */
 
 loadCountries();
+
+document.getElementById("country")
+  .addEventListener("change", loadServices);
+
 checkLogin();
 
 </script>
