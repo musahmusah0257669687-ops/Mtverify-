@@ -234,6 +234,27 @@ hr{
 
       <button onclick="login()">Sign In</button>
 
+<button onclick="showForgotPassword()">
+  Forgot Password?
+</button>
+
+<div id="forgotPasswordBox" style="display:none;">
+
+  <input
+    id="forgotPasswordEmail"
+    type="email"
+    placeholder="Enter your email address"
+    autocomplete="email"
+  >
+
+  <button onclick="forgotPassword()">
+    Send Reset Link
+  </button>
+
+  <div id="forgotPasswordResult" class="result"></div>
+
+</div>
+
     </div>
 
     <div id="authResult" class="result"></div>
