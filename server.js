@@ -618,7 +618,161 @@ app.post(
     }
   }
 );
+/* =========================================================
+   FORGOT PASSWORD
+========================================================= */
 
+app.post(
+  "/api/auth/forgot-password",
+  async (req, res) => {
+    try {
+      const email =
+        cleanEmail(req.body.email);
+
+      if (!email || !validEmail(email)) {
+        return res.status(400).json({
+          error: "Please enter a valid email address."
+        });
+      }
+
+      const result =
+        await pool.query(
+          `
+          SELECT id, email
+          FROM customers
+          WHERE email = $1
+            AND password_hash IS NOT NULL
+          `,
+          [email]
+        );
+
+      /*
+        Always return the same message so people
+        cannot discover which emails have accounts.
+      */
+
+      const message =
+        "If an account exists for this email, a password reset link has been sent.";
+
+      if (result.rows.length === 0) {
+        return res.json({
+          success: true,
+          message
+        });
+      }
+
+      const customer =
+        result.rows[0];
+
+      const token =
+        randomToken(32);
+
+      const tokenHash =
+        crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+
+      await pool.query(
+        `
+        DELETE FROM password_resets
+        WHERE customer_id = $1
+        `,
+        [customer.id]
+      );
+
+      await pool.query(
+        `
+        INSERT INTO password_resets
+        (
+          customer_id,
+          token_hash,
+          expires_at
+        )
+        VALUES
+        (
+          $1,
+          $2,
+          NOW() + INTERVAL '30 minutes'
+        )
+        `,
+        [
+          customer.id,
+          tokenHash
+        ]
+      );
+
+      const resetUrl =
+        "https://mtverify-2.onrender.com/reset-password?token=" +
+        encodeURIComponent(token);
+
+      const emailResponse =
+        await fetch(
+          "https://api.resend.com/emails",
+          {
+            method: "POST",
+            headers: {
+              Authorization:
+                "Bearer " +
+                process.env.RESEND_API_KEY,
+              "Content-Type":
+                "application/json",
+              Accept:
+                "application/json"
+            },
+            body: JSON.stringify({
+              from:
+                process.env.RESET_FROM_EMAIL ||
+                "onboarding@resend.dev",
+              to: [customer.email],
+              subject:
+                "MtVerify Password Reset",
+              html:
+                "<p>You requested a password reset for your MtVerify account.</p>" +
+                "<p><a href=\"" +
+                resetUrl +
+                "\">Reset your password</a></p>" +
+                "<p>This link expires in 30 minutes.</p>" +
+                "<p>If you did not request this, you can ignore this email.</p>"
+            })
+          }
+        );
+
+      const emailData =
+        await readResponse(
+          emailResponse
+        );
+
+      if (!emailResponse.ok) {
+        console.error(
+          "Password reset email error:",
+          emailData
+        );
+
+        return res.status(500).json({
+          error:
+            "Unable to send the password reset email."
+        });
+      }
+
+      res.json({
+        success: true,
+        message
+      });
+
+    } catch (error) {
+      console.error(
+        "Forgot password error:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to process your password reset request."
+      });
+    }
+  }
+);
 /* =========================================================
    SIGN IN
 ========================================================= */
