@@ -2433,7 +2433,133 @@ async function cleanSessions() {
     );
   }
 }
+app.get("/reset-password", (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password - MtVerify</title>
+</head>
 
+<body style="font-family:Arial,sans-serif;background:#f5f7fb;padding:30px;">
+
+  <div style="max-width:450px;margin:40px auto;background:white;padding:25px;border-radius:12px;">
+
+    <h2>Reset your MtVerify password</h2>
+
+    <input
+      id="password"
+      type="password"
+      placeholder="New password (8+ characters)"
+      style="width:100%;padding:12px;margin:10px 0;box-sizing:border-box;"
+    >
+
+    <input
+      id="confirmPassword"
+      type="password"
+      placeholder="Confirm new password"
+      style="width:100%;padding:12px;margin:10px 0;box-sizing:border-box;"
+    >
+
+    <button
+      onclick="resetPassword()"
+      style="width:100%;padding:12px;margin-top:10px;"
+    >
+      Change Password
+    </button>
+
+    <div id="result" style="margin-top:15px;"></div>
+
+  </div>
+
+<script>
+
+const token =
+  new URLSearchParams(window.location.search)
+    .get("token");
+
+async function resetPassword() {
+
+  const password =
+    document.getElementById("password").value;
+
+  const confirmPassword =
+    document.getElementById("confirmPassword").value;
+
+  const result =
+    document.getElementById("result");
+
+  if (!token) {
+    result.textContent =
+      "Invalid reset link.";
+    return;
+  }
+
+  if (password.length < 8) {
+    result.textContent =
+      "Password must be at least 8 characters.";
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    result.textContent =
+      "Passwords do not match.";
+    return;
+  }
+
+  result.textContent =
+    "Changing password...";
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/auth/reset-password",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            token: token,
+            password: password
+          })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Unable to reset password."
+      );
+    }
+
+    result.textContent =
+      data.message ||
+      "Password changed successfully.";
+
+  } catch (error) {
+
+    result.textContent =
+      error.message;
+
+  }
+}
+
+</script>
+
+</body>
+</html>
+  `);
+});
 /* =========================================================
    API 404
 ========================================================= */
