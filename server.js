@@ -774,6 +774,125 @@ app.post(
   }
 );
 /* =========================================================
+   RESET PASSWORD
+========================================================= */
+
+app.post(
+  "/api/auth/reset-password",
+  async (req, res) => {
+    try {
+
+      const token =
+        String(req.body.token || "");
+
+      const newPassword =
+        String(req.body.password || "");
+
+      if (!token) {
+        return res.status(400).json({
+          error: "Invalid reset link."
+        });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          error:
+            "Password must be at least 8 characters."
+        });
+      }
+
+      const tokenHash =
+        crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+
+      const result =
+        await pool.query(
+          `
+          SELECT customer_id
+          FROM password_resets
+          WHERE token_hash = $1
+            AND expires_at > NOW()
+            AND used_at IS NULL
+          `,
+          [tokenHash]
+        );
+
+      if (result.rows.length === 0) {
+        return res.status(400).json({
+          error:
+            "This reset link is invalid or has expired."
+        });
+      }
+
+      const customerId =
+        result.rows[0].customer_id;
+
+      const salt =
+        crypto.randomBytes(16).toString("hex");
+
+      const hash =
+        await hashPassword(
+          newPassword,
+          salt
+        );
+
+      await pool.query(
+        `
+        UPDATE customers
+        SET
+          password_hash = $1,
+          password_salt = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        `,
+        [
+          hash,
+          salt,
+          customerId
+        ]
+      );
+
+      await pool.query(
+        `
+        UPDATE password_resets
+        SET used_at = NOW()
+        WHERE token_hash = $1
+        `,
+        [tokenHash]
+      );
+
+      await pool.query(
+        `
+        DELETE FROM sessions
+        WHERE customer_id = $1
+        `,
+        [customerId]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Password changed successfully. You can now sign in."
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Reset password error:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to reset your password."
+      });
+
+    }
+  }
+);
+/* =========================================================
    SIGN IN
 ========================================================= */
 
