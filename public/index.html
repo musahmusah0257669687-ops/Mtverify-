@@ -312,7 +312,35 @@ hr{
       <button onclick="showManualDeposit()">
   Add Balance by MoMo
       </button>
+<div id="manualDepositBox" style="display:none;">
 
+  <p>
+    Send your MoMo payment to:
+  </p>
+
+  <p>
+    <strong>MoMo Number: YOUR MOMO NUMBER</strong>
+  </p>
+
+  <p>
+    After sending the money, enter the amount below and submit your request.
+  </p>
+
+  <input
+    id="manualDepositAmount"
+    type="number"
+    min="1"
+    step="0.01"
+    placeholder="Amount in GH₵"
+  >
+
+  <button onclick="submitManualDeposit()">
+    Submit Deposit Request
+  </button>
+
+  <div id="manualDepositResult" class="result"></div>
+
+</div>
       <div id="paymentResult" class="result"></div>
 
     </div>
