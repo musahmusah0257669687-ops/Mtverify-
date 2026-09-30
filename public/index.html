@@ -1399,7 +1399,68 @@ if (paymentReference) {
       ? "block"
       : "none";
 }
+async function submitManualDeposit() {
 
+  const amount =
+    Number(
+      document.getElementById(
+        "manualDepositAmount"
+      ).value
+    );
+
+  const result =
+    document.getElementById(
+      "manualDepositResult"
+    );
+
+  if (!Number.isFinite(amount) || amount < 10) {
+    result.textContent =
+      "Minimum deposit is GH₵10.";
+    return;
+  }
+
+  result.textContent =
+    "Submitting deposit request...";
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/manual-deposit",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            amount: amount
+          })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Unable to submit deposit request."
+      );
+    }
+
+    result.textContent =
+      "Deposit request submitted. Please send your payment screenshot on WhatsApp.";
+
+  } catch (error) {
+
+    result.textContent =
+      error.message;
+
+  }
+  }
 </script>
 
 </body>
