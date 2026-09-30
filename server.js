@@ -469,7 +469,56 @@ async function requireLogin(req, res, next) {
     });
   }
 }
+app.post(
+  "/api/manual-deposit",
+  requireLogin,
+  async (req, res) => {
+    try {
+      const amount = Number(req.body.amount);
 
+      if (!Number.isFinite(amount) || amount < 10) {
+        return res.status(400).json({
+          error: "Minimum deposit is GH₵10."
+        });
+      }
+
+      const result = await pool.query(
+        `
+        INSERT INTO manual_deposits
+        (
+          customer_id,
+          amount
+        )
+        VALUES
+        ($1, $2)
+        RETURNING id, amount, status, created_at
+        `,
+        [
+          req.customer.id,
+          amount
+        ]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Deposit request submitted. Please send your payment screenshot on WhatsApp.",
+        deposit: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error(
+        "Manual deposit error:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to submit deposit request."
+      });
+    }
+  }
+);
 /* =========================================================
    HOME
 ========================================================= */
