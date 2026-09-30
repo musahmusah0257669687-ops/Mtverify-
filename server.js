@@ -2632,6 +2632,166 @@ async function cleanSessions() {
     );
   }
 }
+app.get("/admin/deposits", (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MtVerify Admin Deposits</title>
+</head>
+
+<body style="font-family:Arial,sans-serif;background:#f5f7fb;padding:20px;">
+
+  <div style="max-width:700px;margin:20px auto;background:white;padding:20px;border-radius:12px;">
+
+    <h2>MtVerify Admin — MoMo Deposits</h2>
+
+    <button onclick="loadDeposits()">
+      Refresh Deposits
+    </button>
+
+    <div id="result" style="margin-top:20px;">
+      Loading...
+    </div>
+
+  </div>
+
+<script>
+
+async function loadDeposits() {
+
+  const result =
+    document.getElementById("result");
+
+  result.textContent =
+    "Loading deposit requests...";
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/admin/manual-deposits"
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Unable to load deposits."
+      );
+    }
+
+    if (!data.length) {
+      result.textContent =
+        "No deposit requests.";
+      return;
+    }
+
+    result.innerHTML = "";
+
+    data.forEach(deposit => {
+
+      const box =
+        document.createElement("div");
+
+      box.style.padding = "15px";
+      box.style.marginBottom = "12px";
+      box.style.border = "1px solid #ddd";
+      box.style.borderRadius = "10px";
+
+      box.innerHTML = `
+        <strong>Email:</strong> ${deposit.email}<br>
+        <strong>Amount:</strong> GH₵${Number(deposit.amount).toFixed(2)}<br>
+        <strong>Status:</strong> ${deposit.status}<br>
+        <strong>Date:</strong> ${
+          new Date(deposit.created_at)
+            .toLocaleString()
+        }
+        <br><br>
+      `;
+
+      if (deposit.status === "pending") {
+
+        const button =
+          document.createElement("button");
+
+        button.textContent =
+          "Approve Deposit";
+
+        button.onclick =
+          () => approveDeposit(deposit.id);
+
+        box.appendChild(button);
+      }
+
+      result.appendChild(box);
+
+    });
+
+  } catch (error) {
+
+    result.textContent =
+      error.message;
+
+  }
+}
+
+
+async function approveDeposit(id) {
+
+  if (!confirm(
+    "Have you verified the customer's MoMo payment?"
+  )) {
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/admin/manual-deposits/" +
+        id +
+        "/approve",
+        {
+          method: "POST"
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Unable to approve deposit."
+      );
+    }
+
+    alert(
+      "Deposit approved successfully."
+    );
+
+    loadDeposits();
+
+  } catch (error) {
+
+    alert(error.message);
+
+  }
+}
+
+loadDeposits();
+
+</script>
+
+</body>
+</html>
+  `);
+});
 app.get("/reset-password", (req, res) => {
   res.send(`
 <!DOCTYPE html>
