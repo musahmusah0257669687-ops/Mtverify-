@@ -519,6 +519,47 @@ app.post(
     }
   }
 );
+app.get(
+  "/api/admin/manual-deposits",
+  requireLogin,
+  async (req, res) => {
+    try {
+      if (
+        String(req.customer.email).toLowerCase() !==
+        String(process.env.ADMIN_EMAIL).toLowerCase()
+      ) {
+        return res.status(403).json({
+          error: "Admin access required."
+        });
+      }
+
+      const result = await pool.query(`
+        SELECT
+          md.id,
+          md.amount,
+          md.status,
+          md.created_at,
+          c.email
+        FROM manual_deposits md
+        JOIN customers c
+          ON c.id = md.customer_id
+        ORDER BY md.created_at DESC
+      `);
+
+      res.json(result.rows);
+
+    } catch (error) {
+      console.error(
+        "Admin deposits error:",
+        error
+      );
+
+      res.status(500).json({
+        error: "Unable to load deposit requests."
+      });
+    }
+  }
+);
 /* =========================================================
    HOME
 ========================================================= */
