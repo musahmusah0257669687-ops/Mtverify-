@@ -2703,16 +2703,14 @@ async function loadDeposits() {
       box.style.border = "1px solid #ddd";
       box.style.borderRadius = "10px";
 
-      box.innerHTML = `
-        <strong>Email:</strong> ${deposit.email}<br>
-        <strong>Amount:</strong> GH₵${Number(deposit.amount).toFixed(2)}<br>
-        <strong>Status:</strong> ${deposit.status}<br>
-        <strong>Date:</strong> ${
-          new Date(deposit.created_at)
-            .toLocaleString()
-        }
-        <br><br>
-      `;
+      box.innerHTML =
+  "<strong>Email:</strong> " + deposit.email + "<br>" +
+  "<strong>Amount:</strong> GH₵" +
+  Number(deposit.amount).toFixed(2) + "<br>" +
+  "<strong>Status:</strong> " + deposit.status + "<br>" +
+  "<strong>Date:</strong> " +
+  new Date(deposit.created_at).toLocaleString() +
+  "<br><br>";
 
       if (deposit.status === "pending") {
 
