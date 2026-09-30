@@ -303,7 +303,18 @@ async function setupDatabase() {
     CREATE INDEX IF NOT EXISTS sessions_expires_at_idx
     ON sessions(expires_at)
   `);
-
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS manual_deposits (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL
+      REFERENCES customers(id)
+      ON DELETE CASCADE,
+    amount NUMERIC(12,2) NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    approved_at TIMESTAMPTZ
+  )
+`);
   // Payments
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
