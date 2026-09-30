@@ -560,6 +560,104 @@ app.get(
     }
   }
 );
+app.post(
+  "/api/admin/manual-deposits/:id/approve",
+  requireLogin,
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      if (
+        String(req.customer.email).toLowerCase() !==
+        String(process.env.ADMIN_EMAIL).toLowerCase()
+      ) {
+        return res.status(403).json({
+          error: "Admin access required."
+        });
+      }
+
+      const depositId = Number(req.params.id);
+
+      if (!Number.isInteger(depositId)) {
+        return res.status(400).json({
+          error: "Invalid deposit request."
+        });
+      }
+
+      await client.query("BEGIN");
+
+      const depositResult = await client.query(
+        `
+        SELECT id, customer_id, amount, status
+        FROM manual_deposits
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [depositId]
+      );
+
+      if (depositResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({
+          error: "Deposit request not found."
+        });
+      }
+
+      const deposit = depositResult.rows[0];
+
+      if (deposit.status !== "pending") {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          error: "This deposit has already been processed."
+        });
+      }
+
+      await client.query(
+        `
+        UPDATE customers
+        SET
+          balance = balance + $1,
+          updated_at = NOW()
+        WHERE id = $2
+        `,
+        [deposit.amount, deposit.customer_id]
+      );
+
+      await client.query(
+        `
+        UPDATE manual_deposits
+        SET
+          status = 'approved',
+          approved_at = NOW()
+        WHERE id = $1
+        `,
+        [depositId]
+      );
+
+      await client.query("COMMIT");
+
+      res.json({
+        success: true,
+        message: "Deposit approved and balance updated."
+      });
+
+    } catch (error) {
+      await client.query("ROLLBACK");
+
+      console.error(
+        "Approve manual deposit error:",
+        error
+      );
+
+      res.status(500).json({
+        error: "Unable to approve deposit."
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
 /* =========================================================
    HOME
 ========================================================= */
