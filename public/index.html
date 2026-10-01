@@ -1381,9 +1381,144 @@ async function loadCountries(){
 
   list.innerHTML = "";
 
+  search.value = "";
+
   if(!country){
-    search.value = "";
     return;
+  }
+
+  list.innerHTML = "Loading services...";
+
+  try{
+
+    const r =
+      await fetch("/api/catalog");
+
+    const data =
+      await r.json();
+
+    if(!r.ok){
+
+      throw new Error(
+        data.error ||
+        "Unable to load services."
+      );
+
+    }
+
+    const countryKey =
+      Object.keys(data).find(
+        key =>
+          key.toLowerCase() ===
+          country.toLowerCase()
+      );
+
+    if(!countryKey){
+
+      list.innerHTML =
+        "No services found for this country.";
+
+      return;
+    }
+
+    const services =
+      Object.keys(
+        data[countryKey] || {}
+      );
+
+    if(services.length === 0){
+
+      list.innerHTML =
+        "No services available.";
+
+      return;
+    }
+
+    function showServices(text = ""){
+
+      const query =
+        text.toLowerCase().trim();
+
+      list.innerHTML = "";
+
+      const matches =
+        services.filter(service =>
+          service.toLowerCase().includes(query)
+        );
+
+      if(matches.length === 0){
+
+        list.innerHTML =
+          "No matching services.";
+
+        return;
+      }
+
+      matches.forEach(service => {
+
+        const item =
+          document.createElement("div");
+
+        item.textContent =
+          service;
+
+        item.style.padding =
+          "10px";
+
+        item.style.cursor =
+          "pointer";
+
+        item.style.borderBottom =
+          "1px solid #ddd";
+
+        item.onclick = function(){
+
+          product.value =
+            service;
+
+          search.value =
+            service;
+
+          list.innerHTML = "";
+
+          product.dispatchEvent(
+            new Event("change")
+          );
+
+        };
+
+        list.appendChild(item);
+
+      });
+
+    }
+
+    search.oninput = function(){
+
+      showServices(
+        this.value
+      );
+
+    };
+
+    search.onfocus = function(){
+
+      showServices(
+        this.value
+      );
+
+    };
+
+    showServices();
+
+  }catch(e){
+
+    list.innerHTML =
+      e.message ||
+      "Unable to load services.";
+
+  }
+
   }
 
   try{
