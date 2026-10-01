@@ -1326,64 +1326,71 @@ async function checkLogin(){
 
 async function loadCountries(){
 
-  const country =
-    document.getElementById("country");
+  const country = document.getElementById("country");
+  const search = document.getElementById("countrySearch");
+  const list = document.getElementById("countryList");
 
-  const search =
-    document.getElementById("countrySearch");
+  let countries = [];
 
-  country.innerHTML =
-    '<option value="">Loading countries...</option>';
+  try {
 
-  try{
+    const r = await fetch("/api/catalog");
+    const data = await r.json();
 
-    const r =
-      await fetch("/api/catalog");
+    countries = Object.keys(data);
 
-    const data =
-      await r.json();
+    function showCountries(text = "") {
 
-    country.innerHTML =
-      '<option value="">Select country</option>';
+      const query = text.toLowerCase().trim();
 
-    Object.keys(data).forEach(code => {
+      list.innerHTML = "";
 
-      const option =
-        document.createElement("option");
+      const matches = countries.filter(code =>
+        code.toLowerCase().startsWith(query)
+      );
 
-      option.value = code;
-      option.textContent = code;
+      matches.forEach(code => {
 
-      country.appendChild(option);
+        const item = document.createElement("div");
 
-    });
+        item.textContent = code.toUpperCase();
 
-    search.oninput = function(){
+        item.style.padding = "10px";
+        item.style.cursor = "pointer";
+        item.style.borderBottom = "1px solid #ddd";
 
-      const text =
-        this.value.toLowerCase().trim();
+        item.onclick = function(){
 
-      Array.from(country.options).forEach(option => {
+          country.value = code;
+          search.value = code.toUpperCase();
+          list.innerHTML = "";
 
-        option.hidden =
-          text !== "" &&
-          !option.textContent
-            .toLowerCase()
-            .includes(text);
+          country.dispatchEvent(new Event("change"));
+
+        };
+
+        list.appendChild(item);
 
       });
 
-    };
+    }
 
-  }catch(e){
+    search.addEventListener("input", function(){
+      showCountries(this.value);
+    });
 
-    country.innerHTML =
-      '<option value="">Unable to load countries</option>';
+    search.addEventListener("focus", function(){
+      showCountries(this.value);
+    });
+
+  } catch(e) {
+
+    list.innerHTML = "Unable to load countries";
 
   }
 
   }
-  async function loadServices(){
+ async function loadServices(){
 
   const country =
     document.getElementById("country").value;
