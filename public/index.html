@@ -378,10 +378,26 @@ hr{
   type="text"
   id="countrySearch"
   placeholder="Search country..."
+  autocomplete="off"
 >
 
-<select id="country">
-  <option value="">Loading countries...</option>
+<div id="countryList"></div>
+<style>
+#countryList {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+#countryList div:hover {
+  background: #f0f0f0;
+}
+</style>
+<select id="country" style="display:none;">
+  <option value="">Select country</option>
 </select>
 
       <label for="product">Service</label>
@@ -1086,29 +1102,76 @@ async function rentNumber(){
    MY ORDERS
 ========================= */
 
-async function loadOrders(){
+async function loadCountries(){
 
-  const result =
-    document.getElementById("ordersResult");
+  const country = document.getElementById("country");
+  const search = document.getElementById("countrySearch");
+  const list = document.getElementById("countryList");
 
-  result.textContent =
-    "Loading your orders...";
+  let countries = [];
 
-  try{
+  try {
 
-    const r =
-      await fetch("/api/orders");
+    const r = await fetch("/api/catalog");
+    const data = await r.json();
 
-    const d =
-      await r.json();
+    countries = Object.keys(data);
 
-    if(!r.ok){
+    function showCountries(text = "") {
 
-      throw new Error(
-        d.error || "Unable to load orders."
+      const query = text.toLowerCase().trim();
+
+      list.innerHTML = "";
+
+      const matches = countries.filter(code =>
+        code.toLowerCase().startsWith(query)
       );
 
+      matches.forEach(code => {
+
+        const item = document.createElement("div");
+
+        item.textContent = code.toUpperCase();
+
+        item.style.padding = "10px";
+        item.style.cursor = "pointer";
+        item.style.borderBottom = "1px solid #ddd";
+
+        item.onclick = function(){
+
+          country.value = code;
+          search.value = code.toUpperCase();
+          list.innerHTML = "";
+
+          country.dispatchEvent(new Event("change"));
+
+        };
+
+        list.appendChild(item);
+
+      });
     }
+
+    search.addEventListener("input", function(){
+
+      showCountries(this.value);
+
+    });
+
+    search.addEventListener("focus", function(){
+
+      showCountries(this.value);
+
+    });
+
+  } catch(e) {
+
+    list.innerHTML =
+      "Unable to load countries";
+
+  }
+
+  }
 
     const orders =
       Array.isArray(d) ?
