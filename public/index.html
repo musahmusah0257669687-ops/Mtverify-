@@ -372,11 +372,17 @@ hr{
         Select a country and service, then choose an available operator.
       </p>
 
-      <label for="country">Country</label>
+      <label for="countrySearch">Country</label>
 
-      <select id="country">
+<input
+  type="text"
+  id="countrySearch"
+  placeholder="Search country..."
+>
+
+<select id="country">
   <option value="">Loading countries...</option>
-      </select>
+</select>
 
       <label for="product">Service</label>
 
@@ -1260,6 +1266,9 @@ async function loadCountries(){
   const country =
     document.getElementById("country");
 
+  const search =
+    document.getElementById("countrySearch");
+
   country.innerHTML =
     '<option value="">Loading countries...</option>';
 
@@ -1285,6 +1294,23 @@ async function loadCountries(){
       country.appendChild(option);
 
     });
+
+    search.oninput = function(){
+
+      const text =
+        this.value.toLowerCase().trim();
+
+      Array.from(country.options).forEach(option => {
+
+        option.hidden =
+          text !== "" &&
+          !option.textContent
+            .toLowerCase()
+            .includes(text);
+
+      });
+
+    };
 
   }catch(e){
 
@@ -1336,17 +1362,7 @@ async function loadCountries(){
       product.appendChild(option);
 
 });
-const search = document.getElementById("serviceSearch");
 
-search.oninput = function(){
-  const text = this.value.toLowerCase().trim();
-
-  Array.from(product.options).forEach(option => {
-    option.hidden =
-      text !== "" &&
-      !option.textContent.toLowerCase().includes(text);
-  });
-};
 }catch(e){
 
 
@@ -1356,6 +1372,27 @@ search.oninput = function(){
   }
 
 }
+  document
+  .getElementById("serviceSearch")
+  .addEventListener("input", function(){
+
+    const text =
+      this.value.toLowerCase().trim();
+
+    const product =
+      document.getElementById("product");
+
+    Array.from(product.options).forEach(option => {
+
+      option.hidden =
+        text !== "" &&
+        !option.textContent
+          .toLowerCase()
+          .includes(text);
+
+    });
+
+  });
 /* START */
 
 loadCountries();
