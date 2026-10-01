@@ -1343,7 +1343,8 @@ search.oninput = function(){
 
   Array.from(product.options).forEach(option => {
     option.hidden =
-      text && !option.textContent.toLowerCase().startsWith(text);
+      text !== "" &&
+      !option.textContent.toLowerCase().includes(text);
   });
 };
 }catch(e){
