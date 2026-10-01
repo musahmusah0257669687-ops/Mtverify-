@@ -731,6 +731,20 @@ function showDashboard(customer){
       "GH₵" +
       Number(customer.balance).toFixed(2);
 
+  loadCountries();
+  }
+
+  document.getElementById("dashboard")
+    .style.display = "block";
+
+  document.getElementById("accountEmail")
+    .textContent = customer.email;
+
+  document.getElementById("balance")
+    .textContent =
+      "GH₵" +
+      Number(customer.balance).toFixed(2);
+
 }
 
 
@@ -1362,7 +1376,9 @@ async function loadCountries(){
   }
 
   }
- async function loadServices(){
+
+
+  async function loadServices(){
 
   const country =
     document.getElementById("country").value;
@@ -1459,26 +1475,17 @@ async function loadCountries(){
         const item =
           document.createElement("div");
 
-        item.textContent =
-          service;
+        item.textContent = service;
 
-        item.style.padding =
-          "10px";
-
-        item.style.cursor =
-          "pointer";
-
+        item.style.padding = "10px";
+        item.style.cursor = "pointer";
         item.style.borderBottom =
           "1px solid #ddd";
 
         item.onclick = function(){
 
-          product.value =
-            service;
-
-          search.value =
-            service;
-
+          product.value = service;
+          search.value = service;
           list.innerHTML = "";
 
           product.dispatchEvent(
@@ -1494,19 +1501,11 @@ async function loadCountries(){
     }
 
     search.oninput = function(){
-
-      showServices(
-        this.value
-      );
-
+      showServices(this.value);
     };
 
     search.onfocus = function(){
-
-      showServices(
-        this.value
-      );
-
+      showServices(this.value);
     };
 
     showServices();
@@ -1519,103 +1518,7 @@ async function loadCountries(){
 
   }
 
-  }
-
-  try{
-
-    const r =
-      await fetch(
-        "/api/catalog?country=" +
-        encodeURIComponent(country)
-      );
-
-    const data =
-      await r.json();
-
-    const services =
-      Object.keys(data[country] || {});
-
-    function showServices(text = ""){
-
-      const query =
-        text.toLowerCase().trim();
-
-      list.innerHTML = "";
-
-      const matches =
-        services.filter(service =>
-          service.toLowerCase().includes(query)
-        );
-
-      matches.forEach(service => {
-
-        const item =
-          document.createElement("div");
-
-        item.textContent = service;
-
-        item.style.padding = "10px";
-        item.style.cursor = "pointer";
-        item.style.borderBottom =
-          "1px solid #ddd";
-
-        item.onclick = function(){
-
-          product.value = service;
-
-          search.value = service;
-
-          list.innerHTML = "";
-
-          product.dispatchEvent(
-            new Event("change")
-          );
-
-        };
-
-        list.appendChild(item);
-
-      });
-
-    }
-
-    search.oninput = function(){
-      showServices(this.value);
-    };
-
-    search.onfocus = function(){
-      showServices(this.value);
-    };
-
-  }catch(e){
-
-    list.innerHTML =
-      "Unable to load services";
-
-  }
-
-  }
-  document
-  .getElementById("serviceSearch")
-  .addEventListener("input", function(){
-
-    const text =
-      this.value.toLowerCase().trim();
-
-    const product =
-      document.getElementById("product");
-
-    Array.from(product.options).forEach(option => {
-
-      option.hidden =
-        text !== "" &&
-        !option.textContent
-          .toLowerCase()
-          .includes(text);
-
-    });
-
-  });
+}
 /* START */
 
 loadCountries();
