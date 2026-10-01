@@ -1102,76 +1102,29 @@ async function rentNumber(){
    MY ORDERS
 ========================= */
 
-async function loadCountries(){
+async function loadOrders(){
 
-  const country = document.getElementById("country");
-  const search = document.getElementById("countrySearch");
-  const list = document.getElementById("countryList");
+  const result =
+    document.getElementById("ordersResult");
 
-  let countries = [];
+  result.textContent =
+    "Loading your orders...";
 
-  try {
+  try{
 
-    const r = await fetch("/api/catalog");
-    const data = await r.json();
+    const r =
+      await fetch("/api/orders");
 
-    countries = Object.keys(data);
+    const d =
+      await r.json();
 
-    function showCountries(text = "") {
+    if(!r.ok){
 
-      const query = text.toLowerCase().trim();
-
-      list.innerHTML = "";
-
-      const matches = countries.filter(code =>
-        code.toLowerCase().startsWith(query)
+      throw new Error(
+        d.error || "Unable to load orders."
       );
 
-      matches.forEach(code => {
-
-        const item = document.createElement("div");
-
-        item.textContent = code.toUpperCase();
-
-        item.style.padding = "10px";
-        item.style.cursor = "pointer";
-        item.style.borderBottom = "1px solid #ddd";
-
-        item.onclick = function(){
-
-          country.value = code;
-          search.value = code.toUpperCase();
-          list.innerHTML = "";
-
-          country.dispatchEvent(new Event("change"));
-
-        };
-
-        list.appendChild(item);
-
-      });
     }
-
-    search.addEventListener("input", function(){
-
-      showCountries(this.value);
-
-    });
-
-    search.addEventListener("focus", function(){
-
-      showCountries(this.value);
-
-    });
-
-  } catch(e) {
-
-    list.innerHTML =
-      "Unable to load countries";
-
-  }
-
-  }
 
     const orders =
       Array.isArray(d) ?
@@ -1198,6 +1151,7 @@ async function loadCountries(){
       item.style.background = "#fff";
       item.style.border = "1px solid #ddd";
       item.style.borderRadius = "9px";
+      item.style.whiteSpace = "pre-wrap";
 
       item.textContent =
         "Order ID: " +
@@ -1213,11 +1167,11 @@ async function loadCountries(){
         "\nStatus: " +
         (order.status || "N/A") +
         "\nDate: " +
-        (order.created_at ?
+        (
+          order.created_at ?
           new Date(order.created_at).toLocaleString() :
-          "N/A");
-
-      item.style.whiteSpace = "pre-wrap";
+          "N/A"
+        );
 
       result.appendChild(item);
 
@@ -1230,7 +1184,7 @@ async function loadCountries(){
 
   }
 
-}
+  }
 /* =========================
    CHECK SMS
 ========================= */
