@@ -406,12 +406,30 @@ hr{
   type="text"
   id="serviceSearch"
   placeholder="Search service..."
->    
-<select id="product">
+  autocomplete="off"
+>
+
+<div id="serviceList"></div>
+
+<select id="product" style="display:none;">
   <option value="">Select service</option>
 </select>
 
-      <button onclick="checkPrice()">
+<style>
+#serviceList {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+#serviceList div:hover {
+  background: #f0f0f0;
+}
+</style>
+    <button onclick="checkPrice()">
         Check Price & Operators
       </button>
 
@@ -1352,12 +1370,19 @@ async function loadCountries(){
   const product =
     document.getElementById("product");
 
+  const search =
+    document.getElementById("serviceSearch");
+
+  const list =
+    document.getElementById("serviceList");
+
   product.innerHTML =
-    '<option value="">Loading services...</option>';
+    '<option value="">Select service</option>';
+
+  list.innerHTML = "";
 
   if(!country){
-    product.innerHTML =
-      '<option value="">Select service</option>';
+    search.value = "";
     return;
   }
 
@@ -1372,30 +1397,69 @@ async function loadCountries(){
     const data =
       await r.json();
 
-    product.innerHTML =
-      '<option value="">Select service</option>';
+    const services =
+      Object.keys(data[country] || {});
 
-    Object.keys(data[country] || {}).forEach(service => {
+    function showServices(text = ""){
 
-      const option =
-        document.createElement("option");
+      const query =
+        text.toLowerCase().trim();
 
-      option.value = service;
-      option.textContent = service;
+      list.innerHTML = "";
 
-      product.appendChild(option);
+      const matches =
+        services.filter(service =>
+          service.toLowerCase().includes(query)
+        );
 
-});
+      matches.forEach(service => {
 
-}catch(e){
+        const item =
+          document.createElement("div");
 
+        item.textContent = service;
 
-    product.innerHTML =
-      '<option value="">Unable to load services</option>';
+        item.style.padding = "10px";
+        item.style.cursor = "pointer";
+        item.style.borderBottom =
+          "1px solid #ddd";
+
+        item.onclick = function(){
+
+          product.value = service;
+
+          search.value = service;
+
+          list.innerHTML = "";
+
+          product.dispatchEvent(
+            new Event("change")
+          );
+
+        };
+
+        list.appendChild(item);
+
+      });
+
+    }
+
+    search.oninput = function(){
+      showServices(this.value);
+    };
+
+    search.onfocus = function(){
+      showServices(this.value);
+    };
+
+  }catch(e){
+
+    list.innerHTML =
+      "Unable to load services";
 
   }
 
-}
+  }
   document
   .getElementById("serviceSearch")
   .addEventListener("input", function(){
