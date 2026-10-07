@@ -372,69 +372,20 @@ hr{
         Select a country and service, then choose an available operator.
       </p>
 
-      <label for="countrySearch">Country</label>
-
-<input
-  type="text"
-  id="countrySearch"
-  placeholder="Search country..."
-  autocomplete="off"
->
-
-<div id="countryList"></div>
-<style>
-#countryList {
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  max-height: 220px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-#countryList div:hover {
-  background: #f0f0f0;
-}
-</style>
-<select id="country" style="display:none;">
+   
+ <select id="country">
   <option value="">Select country</option>
 </select>
 
       <label for="product">Service</label>
 
-  <input
-  type="text"
-  id="serviceSearch"
-  placeholder="Search service..."
-  autocomplete="off"
->
+  
 
-<div id="serviceList"></div>
-
-<select id="product" style="display:none;">
+<select id="product">
   <option value="">Select service</option>
 </select>
 
-<style>
-#serviceList {
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  max-height: 220px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-#serviceList div:hover {
-  background: #f0f0f0;
-}
-</style>
-    <button onclick="checkPrice()">
-        Check Price & Operators
-      </button>
-
-
-      <div id="operatorList" class="result">
+   <div id="operatorList" class="result">
         Select a country and service first.
       </div>
 
@@ -718,7 +669,8 @@ async function forgotPassword(){
    SHOW DASHBOARD
 ========================= */
 
-function showDashboard(customer){
+
+}function showDashboard(customer){
 
   document.getElementById("auth")
     .style.display = "none";
@@ -737,19 +689,7 @@ function showDashboard(customer){
   loadCountries();
   }
 
-  document.getElementById("dashboard")
-    .style.display = "block";
-
-  document.getElementById("accountEmail")
-    .textContent = customer.email;
-
-  document.getElementById("balance")
-    .textContent =
-      "GH₵" +
-      Number(customer.balance).toFixed(2);
-
-}
-
+  
 
 /* =========================
    LOGOUT
@@ -799,7 +739,6 @@ async function checkBalance(){
 
   }
 
-}
 
 
 /* =========================
@@ -1313,75 +1252,41 @@ async function checkLogin(){
 
 }
 
-async function loadCountries(){
+
+
+  async function loadCountries(){
 
   const country = document.getElementById("country");
-  const search = document.getElementById("countrySearch");
-  const list = document.getElementById("countryList");
-
-  let countries = [];
 
   try {
 
     const r = await fetch("/api/catalog");
     const data = await r.json();
 
-    countries = Object.keys(data);
+    country.innerHTML =
+      '<option value="">Select country</option>';
 
-    function showCountries(text = "") {
+    Object.keys(data).forEach(code => {
 
-      const query = text.toLowerCase().trim();
+      const option = document.createElement("option");
 
-      list.innerHTML = "";
+      option.value = code;
+      option.textContent = code.toUpperCase();
 
-      const matches = countries.filter(code =>
-        code.toLowerCase().startsWith(query)
-      );
+      country.appendChild(option);
 
-      matches.forEach(code => {
-
-        const item = document.createElement("div");
-
-        item.textContent = code.toUpperCase();
-
-        item.style.padding = "10px";
-        item.style.cursor = "pointer";
-        item.style.borderBottom = "1px solid #ddd";
-
-        item.onclick = function(){
-
-          country.value = code;
-          search.value = code.toUpperCase();
-          list.innerHTML = "";
-
-          country.dispatchEvent(new Event("change"));
-
-        };
-
-        list.appendChild(item);
-
-      });
-
-    }
-
-    search.addEventListener("input", function(){
-      showCountries(this.value);
-    });
-
-    search.addEventListener("focus", function(){
-      showCountries(this.value);
     });
 
   } catch(e) {
 
-    list.innerHTML = "Unable to load countries";
+    country.innerHTML =
+      '<option value="">Unable to load countries</option>';
 
   }
 
   }
 
-
-  async function loadServices(){
+async function loadServices(){
 
   const country =
     document.getElementById("country").value;
@@ -1389,41 +1294,17 @@ async function loadCountries(){
   const product =
     document.getElementById("product");
 
-  const search =
-    document.getElementById("serviceSearch");
-
-  const list =
-    document.getElementById("serviceList");
-
   product.innerHTML =
     '<option value="">Select service</option>';
-
-  list.innerHTML = "";
-
-  search.value = "";
 
   if(!country){
     return;
   }
 
-  list.innerHTML = "Loading services...";
-
   try{
 
-    const r =
-      await fetch("/api/catalog");
-
-    const data =
-      await r.json();
-
-    if(!r.ok){
-
-      throw new Error(
-        data.error ||
-        "Unable to load services."
-      );
-
-    }
+    const r = await fetch("/api/catalog");
+    const data = await r.json();
 
     const countryKey =
       Object.keys(data).find(
@@ -1433,95 +1314,32 @@ async function loadCountries(){
       );
 
     if(!countryKey){
-
-      list.innerHTML =
-        "No services found for this country.";
-
       return;
     }
 
-    const services =
-      Object.keys(
-        data[countryKey] || {}
-      );
+    Object.keys(data[countryKey] || {}).forEach(service => {
 
-    if(services.length === 0){
+      const option =
+        document.createElement("option");
 
-      list.innerHTML =
-        "No services available.";
+      option.value = service;
+      option.textContent = service;
 
-      return;
-    }
+      product.appendChild(option);
 
-    function showServices(text = ""){
-
-      const query =
-        text.toLowerCase().trim();
-
-      list.innerHTML = "";
-
-      const matches =
-        services.filter(service =>
-          service.toLowerCase().includes(query)
-        );
-
-      if(matches.length === 0){
-
-        list.innerHTML =
-          "No matching services.";
-
-        return;
-      }
-
-      matches.forEach(service => {
-
-        const item =
-          document.createElement("div");
-
-        item.textContent = service;
-
-        item.style.padding = "10px";
-        item.style.cursor = "pointer";
-        item.style.borderBottom =
-          "1px solid #ddd";
-
-        item.onclick = function(){
-
-          product.value = service;
-          search.value = service;
-          list.innerHTML = "";
-
-          product.dispatchEvent(
-            new Event("change")
-          );
-
-        };
-
-        list.appendChild(item);
-
-      });
-
-    }
-
-    search.oninput = function(){
-      showServices(this.value);
-    };
-
-    search.onfocus = function(){
-      showServices(this.value);
-    };
-
-    showServices();
+    });
 
   }catch(e){
 
-    list.innerHTML =
-      e.message ||
-      "Unable to load services.";
+    product.innerHTML =
+      '<option value="">Unable to load services</option>';
 
   }
 
-}
+  }
+
+ 
+      
 /* START */
 
 loadCountries();
